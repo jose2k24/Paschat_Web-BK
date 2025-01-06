@@ -23,6 +23,11 @@ export default {
           blue: "#2AABEE",
           secondary: "#229ED9",
           hover: "#1A8EC2",
+          dark: "#1A1F2C",
+          message: {
+            sent: "#effdde",
+            received: "#ffffff",
+          },
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
