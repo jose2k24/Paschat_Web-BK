@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Send, MoreVertical, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ProfilePopup } from "./ProfilePopup";
 
 interface Message {
   id: string;
@@ -48,6 +49,7 @@ const mockMessages: Message[] = [
 export const ChatArea = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleSend = () => {
     if (!message.trim()) return;
@@ -76,7 +78,10 @@ export const ChatArea = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => setProfileOpen(true)}
+        >
           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
             E
           </div>
@@ -135,6 +140,7 @@ export const ChatArea = () => {
           </Button>
         </div>
       </div>
+      <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />
     </div>
   );
 };
