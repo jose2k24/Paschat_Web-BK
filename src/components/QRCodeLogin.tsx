@@ -24,7 +24,7 @@ const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
           </div>
           <div className="flex items-start gap-3">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500 text-white text-sm">2</span>
-            <p className="text-left">Go to Settings > Devices > Link Desktop Device</p>
+            <p className="text-left">Go to Settings {'>'} Devices {'>'} Link Desktop Device</p>
           </div>
           <div className="flex items-start gap-3">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-pink-500 text-white text-sm">3</span>
