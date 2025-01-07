@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Send, MoreVertical, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProfilePopup } from "./ProfilePopup";
+import { ChatMenu } from "./chat/ChatMenu";
 
 interface Message {
   id: string;
@@ -10,40 +11,29 @@ interface Message {
   sent: boolean;
   time: string;
   edited?: boolean;
+  sender?: string;
 }
 
 const mockMessages: Message[] = [
   {
     id: "1",
-    content: "Just ask - I will do everything for you.",
+    content: "Thanks bro here's a link to the school management system : www.paschat.net",
     sent: false,
-    time: "10:03 AM",
+    time: "00:34",
+    sender: "José"
   },
   {
     id: "2",
-    content: "I always keep my promises",
+    content: "Muste i am debugging you're adding more stuff to the database 🤔",
     sent: false,
-    time: "12:34 AM",
+    time: "01:22"
   },
   {
     id: "3",
-    content: "Well, yes, of course - you very rarely keep your promises.",
+    content: "👍👍👍i will check it",
     sent: true,
-    time: "12:06 AM",
-  },
-  {
-    id: "4",
-    content: "And you lie very often.",
-    sent: true,
-    time: "12:06 AM",
-  },
-  {
-    id: "5",
-    content: "Where is my flamethrower?",
-    sent: true,
-    time: "1:50 PM",
-    edited: true,
-  },
+    time: "10:11"
+  }
 ];
 
 export const ChatArea = () => {
@@ -83,25 +73,19 @@ export const ChatArea = () => {
           onClick={() => setProfileOpen(true)}
         >
           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
-            E
+            M
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Elon</h2>
-            <p className="text-sm text-gray-400">online</p>
+            <h2 className="text-lg font-semibold text-white">Muste</h2>
+            <p className="text-sm text-gray-400">waiting for network</p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto text-white hover:bg-gray-700"
-        >
-          <MoreVertical className="h-5 w-5" />
-        </Button>
+        <ChatMenu />
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="text-center">
           <span className="px-2 py-1 text-xs bg-gray-800 text-gray-400 rounded">
-            21 January
+            Tuesday
           </span>
         </div>
         {messages.map((msg) => (
@@ -109,7 +93,10 @@ export const ChatArea = () => {
             key={msg.id}
             className={`message ${msg.sent ? "message-sent" : "message-received"}`}
           >
-            <p>{msg.content}</p>
+            {msg.sender && (
+              <span className="text-sm text-blue-400 block mb-1">{msg.sender}</span>
+            )}
+            <p className="break-words">{msg.content}</p>
             <div className="flex items-center gap-1 text-xs mt-1">
               <span className={msg.sent ? "text-gray-300" : "text-gray-500"}>
                 {msg.time}
@@ -125,8 +112,15 @@ export const ChatArea = () => {
       </div>
       <div className="p-4 border-t border-gray-700">
         <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-400 hover:text-white hover:bg-gray-700"
+          >
+            <Link2 className="h-5 w-5" />
+          </Button>
           <Input
-            placeholder="Write a message..."
+            placeholder="Message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSend()}

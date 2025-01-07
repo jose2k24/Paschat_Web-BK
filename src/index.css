@@ -45,6 +45,10 @@
   }
 
   .message-received {
-    @apply bg-secondary text-secondary-foreground;
+    @apply bg-[#8774E1] text-white;
+  }
+
+  .message a {
+    @apply underline;
   }
 }
