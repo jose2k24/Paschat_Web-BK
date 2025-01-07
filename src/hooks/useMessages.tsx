@@ -27,7 +27,12 @@ export const useMessages = (chatId: string) => {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Ensure the type is correctly cast to our Message type
+      return data.map(msg => ({
+        ...msg,
+        type: msg.type as Message["type"]
+      }));
     },
   });
 
@@ -49,7 +54,11 @@ export const useMessages = (chatId: string) => {
           filter: `chat_id=eq.${chatId}`,
         },
         (payload) => {
-          setMessages((current) => [...current, payload.new as Message]);
+          const newMessage = {
+            ...payload.new,
+            type: payload.new.type as Message["type"]
+          };
+          setMessages((current) => [...current, newMessage]);
         }
       )
       .subscribe();

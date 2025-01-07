@@ -15,6 +15,14 @@ export const ChatArea = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { messages, sendMessage } = useMessages(chatId);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  // Get current user on component mount
+  useState(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user?.id || null);
+    });
+  }, []);
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -84,7 +92,7 @@ export const ChatArea = () => {
           <div
             key={msg.id}
             className={`message ${
-              msg.sender_id === supabase.auth.user()?.id
+              msg.sender_id === currentUser
                 ? "message-sent"
                 : "message-received"
             }`}
