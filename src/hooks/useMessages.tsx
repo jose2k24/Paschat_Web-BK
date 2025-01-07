@@ -20,6 +20,12 @@ export const useMessages = (chatId: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["messages", chatId],
     queryFn: async () => {
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(chatId)) {
+        throw new Error("Invalid chat ID format");
+      }
+
       const { data, error } = await supabase
         .from("messages")
         .select("*")
@@ -28,12 +34,12 @@ export const useMessages = (chatId: string) => {
 
       if (error) throw error;
       
-      // Ensure the type is correctly cast to our Message type
-      return data.map(msg => ({
+      return data.map((msg: any) => ({
         ...msg,
         type: msg.type as Message["type"]
-      }));
+      })) as Message[];
     },
+    enabled: Boolean(chatId), // Only run query if chatId exists
   });
 
   useEffect(() => {
@@ -57,7 +63,7 @@ export const useMessages = (chatId: string) => {
           const newMessage = {
             ...payload.new,
             type: payload.new.type as Message["type"]
-          };
+          } as Message;
           setMessages((current) => [...current, newMessage]);
         }
       )

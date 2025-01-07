@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Send, ArrowLeft, Link2, Image, FileVideo, File } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export const ChatArea = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   // Get current user on component mount
-  useState(() => {
+  useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user?.id || null);
     });
