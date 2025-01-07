@@ -2,29 +2,62 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
 }
 
+interface Country {
+  name: string;
+  code: string;
+  dialCode: string;
+}
+
+const countries: Country[] = [
+  { name: "Ethiopia", code: "ET", dialCode: "+251" },
+  { name: "United States", code: "US", dialCode: "+1" },
+  { name: "United Kingdom", code: "GB", dialCode: "+44" },
+  { name: "India", code: "IN", dialCode: "+91" },
+  { name: "China", code: "CN", dialCode: "+86" },
+  // Add more countries as needed
+];
+
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
-  const [country, setCountry] = useState("Ethiopia");
-  const [phoneNumber, setPhoneNumber] = useState("+251");
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [keepSignedIn, setKeepSignedIn] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Logging in with:", { country, phoneNumber, keepSignedIn });
+    console.log("Logging in with:", {
+      country: selectedCountry,
+      phoneNumber,
+      keepSignedIn,
+    });
+  };
+
+  const handleCountryChange = (value: string) => {
+    const country = countries.find((c) => c.code === value);
+    if (country) {
+      setSelectedCountry(country);
+      setPhoneNumber(country.dialCode);
+    }
   };
 
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <img 
-          src="/lovable-uploads/1f7c8e0d-d8a1-452d-9ac8-573c29b25ef1.png" 
-          alt="PasChat Logo" 
+        <img
+          src="/lovable-uploads/1f7c8e0d-d8a1-452d-9ac8-573c29b25ef1.png"
+          alt="PasChat Logo"
           className="w-20 h-20 mx-auto mb-4"
         />
         <h1 className="text-3xl font-bold text-white mb-2">PasChat</h1>
@@ -36,17 +69,36 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
-            <Label htmlFor="country" className="text-gray-400">Country</Label>
-            <Input
-              id="country"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="bg-transparent border-pink-500/20 text-white"
-            />
+            <Label htmlFor="country" className="text-gray-400">
+              Country
+            </Label>
+            <Select
+              value={selectedCountry.code}
+              onValueChange={handleCountryChange}
+            >
+              <SelectTrigger className="bg-transparent border-pink-500/20 text-white">
+                <SelectValue placeholder="Select a country">
+                  {selectedCountry.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-[#1A1F2C] border-pink-500/20">
+                {countries.map((country) => (
+                  <SelectItem
+                    key={country.code}
+                    value={country.code}
+                    className="text-white hover:bg-pink-500/20"
+                  >
+                    {country.name} ({country.dialCode})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <Label htmlFor="phone" className="text-gray-400">Your phone number</Label>
+            <Label htmlFor="phone" className="text-gray-400">
+              Your phone number
+            </Label>
             <Input
               id="phone"
               value={phoneNumber}

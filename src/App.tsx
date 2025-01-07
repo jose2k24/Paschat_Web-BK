@@ -17,6 +17,7 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Index />} />
+          <Route path="/chat/:chatId" element={<Index />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 interface Chat {
   id: string;
@@ -52,6 +53,13 @@ const mockChats: Chat[] = [
 export const ChatSidebar = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "group" | "channel">("all");
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleChatSelect = (chatId: string) => {
+    setSelectedChat(chatId);
+    navigate(`/chat/${chatId}`);
+  };
 
   return (
     <div className="w-full md:w-80 h-full border-r flex flex-col bg-telegram-dark text-white">
@@ -108,7 +116,10 @@ export const ChatSidebar = () => {
         {mockChats.map((chat) => (
           <div
             key={chat.id}
-            className="p-4 hover:bg-gray-800/50 cursor-pointer transition-colors"
+            className={`p-4 hover:bg-gray-800/50 cursor-pointer transition-colors ${
+              selectedChat === chat.id ? "bg-gray-800/50" : ""
+            }`}
+            onClick={() => handleChatSelect(chat.id)}
           >
             <div className="flex items-center gap-3">
               <div className="relative">
