@@ -22,6 +22,13 @@ export const MessageInput = ({
     onMessageChange(message + emoji.native);
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
+
   return (
     <div className="p-4 border-t border-gray-700">
       <div className="flex gap-2">
@@ -38,7 +45,7 @@ export const MessageInput = ({
             placeholder="Message"
             value={message}
             onChange={(e) => onMessageChange(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && onSend()}
+            onKeyPress={handleKeyPress}
             className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-gray-700"
           />
           <Popover>
@@ -52,13 +59,14 @@ export const MessageInput = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
-              <Picker data={data} onEmojiSelect={onEmojiSelect} />
+              <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
             </PopoverContent>
           </Popover>
         </div>
         <Button
           onClick={onSend}
           className="bg-telegram-blue hover:bg-telegram-hover text-white"
+          disabled={!message.trim()}
         >
           <Send className="h-4 w-4" />
         </Button>

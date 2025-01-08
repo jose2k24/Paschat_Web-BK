@@ -31,7 +31,7 @@ const OTPVerification = () => {
             className="w-20 h-20 mx-auto mb-4"
           />
           <h1 className="text-3xl font-bold text-white mb-2">Enter Code</h1>
-          <p className="text-gray-300">
+          <p className="text-gray-300 mb-8">
             We've sent you a code to verify your phone number
           </p>
         </div>
@@ -42,12 +42,13 @@ const OTPVerification = () => {
             onChange={setOtp}
             maxLength={5}
             render={({ slots }) => (
-              <InputOTPGroup className="gap-2 justify-center">
-                {Array.from({ length: 5 }).map((_, idx) => (
+              <InputOTPGroup className="flex gap-2 justify-center">
+                {slots.map((slot, index) => (
                   <InputOTPSlot
-                    key={idx}
-                    index={idx}
-                    className="bg-transparent border-pink-500/20 text-white"
+                    key={index}
+                    {...slot}
+                    index={index}
+                    className="w-12 h-12 text-lg bg-transparent border-2 border-pink-500/20 text-white focus:border-pink-500"
                   />
                 ))}
               </InputOTPGroup>

@@ -1,7 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Phone, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatMenu } from "./ChatMenu";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface ChatHeaderProps {
   onProfileClick: () => void;
@@ -9,6 +10,14 @@ interface ChatHeaderProps {
 
 export const ChatHeader = ({ onProfileClick }: ChatHeaderProps) => {
   const navigate = useNavigate();
+
+  const handleVoiceCall = () => {
+    toast.info("Starting voice call...");
+  };
+
+  const handleVideoCall = () => {
+    toast.info("Starting video call...");
+  };
 
   return (
     <div className="p-4 border-b border-gray-700 flex items-center gap-4">
@@ -21,7 +30,7 @@ export const ChatHeader = ({ onProfileClick }: ChatHeaderProps) => {
         <ArrowLeft className="h-5 w-5" />
       </Button>
       <div 
-        className="flex items-center gap-3 cursor-pointer"
+        className="flex items-center gap-3 cursor-pointer flex-1"
         onClick={onProfileClick}
       >
         <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
@@ -32,7 +41,25 @@ export const ChatHeader = ({ onProfileClick }: ChatHeaderProps) => {
           <p className="text-sm text-gray-400">online</p>
         </div>
       </div>
-      <ChatMenu />
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-gray-700"
+          onClick={handleVoiceCall}
+        >
+          <Phone className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-gray-700"
+          onClick={handleVideoCall}
+        >
+          <Video className="h-5 w-5" />
+        </Button>
+        <ChatMenu />
+      </div>
     </div>
   );
 };
