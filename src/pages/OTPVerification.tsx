@@ -43,10 +43,9 @@ const OTPVerification = () => {
             maxLength={5}
             render={({ slots }) => (
               <InputOTPGroup className="gap-2 justify-center">
-                {slots.map((slot, idx) => (
+                {Array.from({ length: 5 }).map((_, idx) => (
                   <InputOTPSlot
                     key={idx}
-                    {...slot}
                     index={idx}
                     className="bg-transparent border-pink-500/20 text-white"
                   />
