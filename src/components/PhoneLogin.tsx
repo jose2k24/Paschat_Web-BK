@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
@@ -27,21 +29,24 @@ const countries: Country[] = [
   { name: "United Kingdom", code: "GB", dialCode: "+44" },
   { name: "India", code: "IN", dialCode: "+91" },
   { name: "China", code: "CN", dialCode: "+86" },
-  // Add more countries as needed
 ];
 
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
+  const navigate = useNavigate();
   const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(selectedCountry.dialCode);
   const [keepSignedIn, setKeepSignedIn] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Logging in with:", {
-      country: selectedCountry,
-      phoneNumber,
-      keepSignedIn,
-    });
+    const numberWithoutCode = phoneNumber.replace(selectedCountry.dialCode, "").trim();
+    
+    if (numberWithoutCode === "1234567890") {
+      toast.success("Verification code sent");
+      navigate("/verify");
+    } else {
+      toast.error("Please use the mock number: 1234567890");
+    }
   };
 
   const handleCountryChange = (value: string) => {

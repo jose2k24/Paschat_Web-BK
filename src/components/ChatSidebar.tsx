@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChatTabs } from "./chat/ChatTabs";
 import { ChatSearch } from "./chat/ChatSearch";
 import { ChatList } from "./chat/ChatList";
+import { StoriesSection } from "./chat/StoriesSection";
 
 interface Chat {
   id: string;
@@ -68,6 +69,7 @@ export const ChatSidebar = () => {
         <ChatTabs activeTab={activeTab} onTabChange={setActiveTab} />
         <ChatSearch value={search} onChange={setSearch} />
       </div>
+      <StoriesSection />
       <ChatList
         chats={mockChats}
         selectedChat={selectedChat}
