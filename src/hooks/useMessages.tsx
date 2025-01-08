@@ -23,7 +23,7 @@ export const useMessages = (chatId: string) => {
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(chatId)) {
-        throw new Error("Invalid chat ID format");
+        throw new Error("Invalid chat ID format. Expected UUID format.");
       }
 
       const { data, error } = await supabase
@@ -49,6 +49,8 @@ export const useMessages = (chatId: string) => {
   }, [data]);
 
   useEffect(() => {
+    if (!chatId) return;
+
     const channel = supabase
       .channel("messages")
       .on(
@@ -76,6 +78,13 @@ export const useMessages = (chatId: string) => {
 
   const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
     try {
+      // Validate UUID format before sending
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(chatId)) {
+        toast.error("Invalid chat ID format");
+        return;
+      }
+
       const { error } = await supabase.from("messages").insert({
         content,
         chat_id: chatId,
