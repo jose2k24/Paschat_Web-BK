@@ -1,28 +1,36 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, ArrowLeft, Link2, Image, FileVideo, File } from "lucide-react";
+import { Send, ArrowLeft, Link2, Image, FileVideo, File, Smile } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProfilePopup } from "./ProfilePopup";
 import { ChatMenu } from "./chat/ChatMenu";
 import { useMessages } from "@/hooks/useMessages";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const ChatArea = () => {
   const { chatId = "" } = useParams();
+  const navigate = useNavigate();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { messages, sendMessage } = useMessages(chatId);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user on component mount
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user?.id || null);
     });
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -63,6 +71,10 @@ export const ChatArea = () => {
     }
   };
 
+  const onEmojiSelect = (emoji: any) => {
+    setMessage(prev => prev + emoji.native);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0F1621]">
       <div className="p-4 border-b border-gray-700 flex items-center gap-4">
@@ -70,6 +82,7 @@ export const ChatArea = () => {
           variant="ghost"
           size="icon"
           className="md:hidden text-white hover:bg-gray-700"
+          onClick={() => navigate("/")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -136,6 +149,7 @@ export const ChatArea = () => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="p-4 border-t border-gray-700">
         <input
@@ -154,13 +168,29 @@ export const ChatArea = () => {
           >
             <Link2 className="h-5 w-5" />
           </Button>
-          <Input
-            placeholder="Message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-gray-700"
-          />
+          <div className="flex-1 flex gap-2">
+            <Input
+              placeholder="Message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-gray-700"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-400 hover:text-white hover:bg-gray-700"
+                >
+                  <Smile className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Picker data={data} onEmojiSelect={onEmojiSelect} />
+              </PopoverContent>
+            </Popover>
+          </div>
           <Button
             onClick={handleSend}
             className="bg-telegram-blue hover:bg-telegram-hover text-white"
