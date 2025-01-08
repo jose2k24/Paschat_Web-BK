@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfilePopup } from "./ProfilePopup";
 import { useMessages } from "@/hooks/useMessages";
@@ -14,14 +13,8 @@ export const ChatArea = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { messages, sendMessage } = useMessages(chatId);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser] = useState("current_user");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUser(user?.id || null);
-    });
-  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -38,27 +31,15 @@ export const ChatArea = () => {
     if (!file) return;
 
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${chatId}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-media")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("chat-media")
-        .getPublicUrl(filePath);
-
+      // Mock file upload - replace with your actual file upload logic
+      const mockFileUrl = URL.createObjectURL(file);
       const fileType = file.type.startsWith("image/")
         ? "image"
         : file.type.startsWith("video/")
         ? "video"
         : "document";
 
-      await sendMessage(file.name, fileType, publicUrl);
+      await sendMessage(file.name, fileType, mockFileUrl);
       toast.success("File uploaded successfully");
     } catch (error) {
       toast.error("Failed to upload file");
