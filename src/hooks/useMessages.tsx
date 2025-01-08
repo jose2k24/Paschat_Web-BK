@@ -1,45 +1,40 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { api } from "@/services/api";
+import { websocketService } from "@/services/websocket";
+import { Message } from "@/types/chat";
 
-interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  chat_id: string;
-  type: "text" | "image" | "video" | "document";
-  media_url?: string;
-  is_edited: boolean;
-  created_at: string;
-}
+const mockMessages: Message[] = [
+  {
+    id: "1",
+    content: "Hey there!",
+    sender_id: "user1",
+    chat_id: "1",
+    type: "text",
+    is_edited: false,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    content: "Hi! How are you?",
+    sender_id: "current_user",
+    chat_id: "1",
+    type: "text",
+    is_edited: false,
+    created_at: new Date().toISOString(),
+  },
+];
 
 export const useMessages = (chatId: string) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(mockMessages);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["messages", chatId],
     queryFn: async () => {
-      // Validate UUID format
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(chatId)) {
-        throw new Error("Invalid chat ID format. Expected UUID format.");
-      }
-
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("chat_id", chatId)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      
-      return data.map((msg: any) => ({
-        ...msg,
-        type: msg.type as Message["type"]
-      })) as Message[];
+      // In production, replace with actual API call
+      return mockMessages;
     },
-    enabled: Boolean(chatId), // Only run query if chatId exists
   });
 
   useEffect(() => {
@@ -51,48 +46,34 @@ export const useMessages = (chatId: string) => {
   useEffect(() => {
     if (!chatId) return;
 
-    const channel = supabase
-      .channel("messages")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `chat_id=eq.${chatId}`,
-        },
-        (payload) => {
-          const newMessage = {
-            ...payload.new,
-            type: payload.new.type as Message["type"]
-          } as Message;
-          setMessages((current) => [...current, newMessage]);
-        }
-      )
-      .subscribe();
+    const unsubscribe = websocketService.subscribe((message) => {
+      if (message.chatId === chatId) {
+        setMessages((current) => [...current, message]);
+      }
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => unsubscribe();
   }, [chatId]);
 
   const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
     try {
-      // Validate UUID format before sending
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(chatId)) {
-        toast.error("Invalid chat ID format");
-        return;
-      }
-
-      const { error } = await supabase.from("messages").insert({
+      const newMessage = {
+        id: Date.now().toString(),
         content,
         chat_id: chatId,
+        sender_id: "current_user",
         type,
         media_url: mediaUrl,
+        is_edited: false,
+        created_at: new Date().toISOString(),
+      };
+
+      websocketService.send({
+        type: "chat_message",
+        data: newMessage,
       });
 
-      if (error) throw error;
+      setMessages((current) => [...current, newMessage]);
     } catch (error) {
       toast.error("Failed to send message");
       console.error("Error sending message:", error);

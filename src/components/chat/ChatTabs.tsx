@@ -1,11 +1,4 @@
-import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { SidebarMenu } from "./SidebarMenu";
 
 interface ChatTabsProps {
   activeTab: "all" | "group" | "channel";
@@ -15,28 +8,7 @@ interface ChatTabsProps {
 export const ChatTabs = ({ activeTab, onTabChange }: ChatTabsProps) => {
   return (
     <div className="flex items-center gap-4 mb-4">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-gray-700"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48 bg-gray-800 text-white border-gray-700">
-          <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-            New Group
-          </DropdownMenuItem>
-          <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-            Contacts
-          </DropdownMenuItem>
-          <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-            Settings
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <SidebarMenu />
       <div className="flex flex-1 gap-4">
         <button
           onClick={() => onTabChange("all")}
