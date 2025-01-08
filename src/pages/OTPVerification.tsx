@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -43,10 +43,11 @@ const OTPVerification = () => {
             maxLength={5}
             render={({ slots }) => (
               <InputOTPGroup className="gap-2 justify-center">
-                {slots.map((slot, index) => (
+                {slots.map((slot, idx) => (
                   <InputOTPSlot
-                    key={index}
+                    key={idx}
                     {...slot}
+                    index={idx}
                     className="bg-transparent border-pink-500/20 text-white"
                   />
                 ))}

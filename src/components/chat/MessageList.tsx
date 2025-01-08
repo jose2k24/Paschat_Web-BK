@@ -1,4 +1,5 @@
 import { Message } from "@/types/chat";
+import { FileIcon } from "lucide-react"; // Changed from File to FileIcon
 
 interface MessageListProps {
   messages: Message[];
@@ -39,7 +40,7 @@ export const MessageList = ({ messages, currentUser }: MessageListProps) => {
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-blue-400 hover:text-blue-300"
             >
-              <File className="h-4 w-4" />
+              <FileIcon className="h-4 w-4" />
               {msg.content}
             </a>
           )}
