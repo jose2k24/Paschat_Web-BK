@@ -9,9 +9,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
+
+  const handleNavigation = (path: string, label: string) => {
+    navigate(path);
+    toast.success(`Navigated to ${label}`);
+  };
 
   return (
     <DropdownMenu>
@@ -26,21 +32,21 @@ export const SidebarMenu = () => {
       >
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => navigate("/saved-messages")}
+          onClick={() => handleNavigation("/saved-messages", "Saved Messages")}
         >
           <Bookmark className="mr-2 h-4 w-4" />
           <span>Saved Messages</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => navigate("/contacts")}
+          onClick={() => handleNavigation("/contacts", "Contacts")}
         >
           <User className="mr-2 h-4 w-4" />
           <span>Contacts</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => navigate("/settings")}
+          onClick={() => handleNavigation("/settings", "Settings")}
         >
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
@@ -56,14 +62,14 @@ export const SidebarMenu = () => {
         <DropdownMenuSeparator className="bg-gray-700" />
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => navigate("/help")}
+          onClick={() => handleNavigation("/help", "Help")}
         >
           <HelpCircle className="mr-2 h-4 w-4" />
           <span>Help</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => navigate("/bug-report")}
+          onClick={() => handleNavigation("/bug-report", "Bug Report")}
         >
           <Bug className="mr-2 h-4 w-4" />
           <span>Report Bug</span>

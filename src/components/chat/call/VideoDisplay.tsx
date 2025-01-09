@@ -29,7 +29,7 @@ export const VideoDisplay = ({ stream, type }: VideoDisplayProps) => {
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transform scale-x-[-1]"
       />
     </div>
   );
