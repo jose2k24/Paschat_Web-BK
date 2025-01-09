@@ -12,6 +12,7 @@ import {
   Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 const SettingsItem = ({ icon: Icon, label, onClick }: { 
   icon: React.ElementType;
@@ -36,7 +37,10 @@ const Settings = () => {
 
   const handleSettingClick = (setting: string) => {
     // Here you would typically navigate to the specific setting page
-    toast.info(`Navigating to ${setting}`);
+    toast({
+      title: "Navigation",
+      description: `Navigating to ${setting}`,
+    });
   };
 
   return (
