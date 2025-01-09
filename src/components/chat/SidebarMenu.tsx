@@ -17,25 +17,21 @@ export const SidebarMenu = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
-    // Initialize theme based on system preference
-    const isDark = document.documentElement.classList.contains("dark");
-    setIsDarkMode(isDark);
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setIsDarkMode(savedTheme === "dark");
+    document.documentElement.classList.toggle("dark", savedTheme === "dark");
   }, []);
 
   const toggleTheme = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove("dark");
-      toast.success("Light mode activated");
-    } else {
-      document.documentElement.classList.add("dark");
-      toast.success("Dark mode activated");
-    }
+    const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", newTheme);
+    toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode activated`);
   };
 
-  const handleNavigation = (path: string, label: string) => {
+  const handleNavigation = (path: string) => {
     navigate(path);
-    toast.success(`Navigated to ${label}`);
   };
 
   return (
@@ -51,21 +47,21 @@ export const SidebarMenu = () => {
       >
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => handleNavigation("/saved-messages", "Saved Messages")}
+          onClick={() => handleNavigation("/saved-messages")}
         >
           <Bookmark className="mr-2 h-4 w-4" />
           <span>Saved Messages</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => handleNavigation("/contacts", "Contacts")}
+          onClick={() => handleNavigation("/contacts")}
         >
           <User className="mr-2 h-4 w-4" />
           <span>Contacts</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => handleNavigation("/settings", "Settings")}
+          onClick={() => handleNavigation("/settings")}
         >
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
@@ -81,25 +77,6 @@ export const SidebarMenu = () => {
             {isDarkMode ? "Night Mode" : "Day Mode"}
           </span>
           <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
-        </div>
-        <DropdownMenuSeparator className="bg-gray-700" />
-        <DropdownMenuItem 
-          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => handleNavigation("/help", "Help")}
-        >
-          <HelpCircle className="mr-2 h-4 w-4" />
-          <span>Help</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
-          onClick={() => handleNavigation("/bug-report", "Bug Report")}
-        >
-          <Bug className="mr-2 h-4 w-4" />
-          <span>Report Bug</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-gray-700" />
-        <div className="px-2 py-1.5 text-sm text-gray-400">
-          PasChat Web A 10.9.34
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

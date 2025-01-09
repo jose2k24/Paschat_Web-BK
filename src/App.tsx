@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import OTPVerification from "./pages/OTPVerification";
 import Contacts from "./pages/Contacts";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +18,7 @@ const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Sonner />
+          <Sonner position="bottom-center" />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -26,7 +27,7 @@ const App: React.FC = () => {
               <Route path="/chat/:chatId" element={<Index />} />
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/saved-messages" element={<Index />} />
-              <Route path="/settings" element={<Index />} />
+              <Route path="/settings/*" element={<Settings />} />
               <Route path="/help" element={<Index />} />
               <Route path="/bug-report" element={<Index />} />
             </Routes>
