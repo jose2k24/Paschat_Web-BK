@@ -2,6 +2,7 @@ import { Send, Link2, Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { VoiceRecorder } from "./VoiceRecorder";
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
@@ -48,6 +49,7 @@ export const MessageInput = ({
             onKeyPress={handleKeyPress}
             className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-gray-700"
           />
+          <VoiceRecorder />
           <Popover>
             <PopoverTrigger asChild>
               <Button

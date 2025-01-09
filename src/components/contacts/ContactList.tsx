@@ -1,6 +1,8 @@
-import React from "react";
-import { Search } from "lucide-react";
+import React, { useState } from "react";
+import { Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Contact {
   id: string;
@@ -49,19 +51,40 @@ interface ContactListProps {
 }
 
 export const ContactList = ({ onSelectContact }: ContactListProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const filteredContacts = mockContacts.filter(contact => 
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="w-80 border-r border-gray-800 flex flex-col">
       <div className="p-4 border-b border-gray-800">
+        <div className="flex items-center gap-2 mb-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <span className="text-white font-medium">Contacts</span>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search contacts"
             className="pl-9 bg-gray-800 border-none text-white placeholder:text-gray-400"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {mockContacts.map((contact) => (
+        {filteredContacts.map((contact) => (
           <button
             key={contact.id}
             onClick={() => onSelectContact(contact.id)}
