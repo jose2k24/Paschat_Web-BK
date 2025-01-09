@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { X, Mic, Video, MonitorUp, PhoneOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ interface CallInterfaceProps {
 export const CallInterface = ({ isOpen, onClose, type }: CallInterfaceProps) => {
   const [hasPermissions, setHasPermissions] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,6 +24,12 @@ export const CallInterface = ({ isOpen, onClose, type }: CallInterfaceProps) => 
       }
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
 
   const requestPermissions = async () => {
     try {
@@ -65,13 +72,26 @@ export const CallInterface = ({ isOpen, onClose, type }: CallInterfaceProps) => 
         </Button>
 
         <div className="flex flex-col items-center gap-6 py-8">
-          <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
-            <img
-              src="/telegram-logo.png"
-              alt="Telegram"
-              className="w-16 h-16"
-            />
-          </div>
+          {type === "video" && stream && (
+            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          {(!type || type === "voice" || !stream) && (
+            <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">
+              <img
+                src="/telegram-logo.png"
+                alt="Telegram"
+                className="w-16 h-16"
+              />
+            </div>
+          )}
           <h2 className="text-white text-xl font-medium">
             {type === "video" ? "Video Call" : "Voice Call"}
           </h2>

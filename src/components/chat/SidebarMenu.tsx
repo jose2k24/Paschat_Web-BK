@@ -1,4 +1,5 @@
-import { Menu } from "lucide-react";
+import { Menu, User, Bookmark, Moon, Bug, Settings, HelpCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 export const SidebarMenu = () => {
+  const navigate = useNavigate();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -21,36 +24,49 @@ export const SidebarMenu = () => {
         align="start"
         className="w-64 bg-[#1A1F2C] text-white border-gray-700"
       >
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          Saved Messages
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={() => navigate("/saved-messages")}
+        >
+          <Bookmark className="mr-2 h-4 w-4" />
+          <span>Saved Messages</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          Contacts
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={() => navigate("/contacts")}
+        >
+          <User className="mr-2 h-4 w-4" />
+          <span>Contacts</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          My Stories
-        </DropdownMenuItem>
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          Settings
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={() => navigate("/settings")}
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-gray-700" />
         <div className="px-2 py-1.5 flex items-center justify-between">
-          <span>Night Mode</span>
-          <Switch />
-        </div>
-        <div className="px-2 py-1.5 flex items-center justify-between">
-          <span>Animations</span>
+          <span className="flex items-center">
+            <Moon className="mr-2 h-4 w-4" />
+            Night Mode
+          </span>
           <Switch />
         </div>
         <DropdownMenuSeparator className="bg-gray-700" />
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          PasChat Features
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={() => navigate("/help")}
+        >
+          <HelpCircle className="mr-2 h-4 w-4" />
+          <span>Help</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          Report a Bug
-        </DropdownMenuItem>
-        <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
-          Switch to K Version
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+          onClick={() => navigate("/bug-report")}
+        >
+          <Bug className="mr-2 h-4 w-4" />
+          <span>Report Bug</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-gray-700" />
         <div className="px-2 py-1.5 text-sm text-gray-400">
