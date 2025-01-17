@@ -18,7 +18,7 @@ export const ChatTabs = ({ activeTab, onTabChange }: ChatTabsProps) => {
               : "border-transparent text-gray-400 hover:text-gray-300"
           }`}
         >
-          All Chats
+          Private Chats
         </button>
         <button
           onClick={() => onTabChange("group")}
