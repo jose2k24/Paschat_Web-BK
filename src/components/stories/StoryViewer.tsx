@@ -1,6 +1,12 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Heart, Send, Smile } from "lucide-react";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
+import { toast } from "sonner";
 
 interface Story {
   id: string;
@@ -20,6 +26,7 @@ interface StoryViewerProps {
 
 export const StoryViewer = ({ stories, initialStoryIndex, open, onOpenChange }: StoryViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialStoryIndex);
+  const [message, setMessage] = useState("");
   const currentStory = stories[currentIndex];
 
   const handlePrevious = () => {
@@ -32,6 +39,25 @@ export const StoryViewer = ({ stories, initialStoryIndex, open, onOpenChange }: 
     if (currentIndex < stories.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
+  };
+
+  const handleSendMessage = () => {
+    if (message.trim()) {
+      toast.success("Message sent!");
+      setMessage("");
+    }
+  };
+
+  const handleReaction = () => {
+    toast.success("❤️ Reaction sent!");
+  };
+
+  const handleForward = () => {
+    toast.success("Story shared!");
+  };
+
+  const onEmojiSelect = (emoji: any) => {
+    setMessage(prev => prev + emoji.native);
   };
 
   return (
@@ -88,6 +114,49 @@ export const StoryViewer = ({ stories, initialStoryIndex, open, onOpenChange }: 
                     className="w-full h-full object-contain"
                   />
                 )}
+              </div>
+
+              <div className="p-4 border-t border-gray-700">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white"
+                    onClick={handleReaction}
+                  >
+                    <Heart className="h-5 w-5" />
+                  </Button>
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      placeholder="Send message"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      className="flex-1 bg-gray-800 border-gray-700"
+                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-400 hover:text-white"
+                        >
+                          <Smile className="h-5 w-5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white"
+                    onClick={handleForward}
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

@@ -2,14 +2,14 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Camera, ArrowLeft, Search, MoreVertical, Settings, User, Bell, Lock, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useRef } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface ProfilePopupProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userName?: string;
 }
 
-export const ProfilePopup = ({ open, onOpenChange }: ProfilePopupProps) => {
+export const ProfilePopup = ({ open, onOpenChange, userName = "User" }: ProfilePopupProps) => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,7 +66,7 @@ export const ProfilePopup = ({ open, onOpenChange }: ProfilePopupProps) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  "R"
+                  userName[0]
                 )}
               </div>
               <input
@@ -89,7 +89,7 @@ export const ProfilePopup = ({ open, onOpenChange }: ProfilePopupProps) => {
         <div className="px-6 pt-20 pb-6 space-y-6">
           <div className="text-center">
             <h2 className="text-2xl font-semibold flex items-center justify-center gap-2">
-              Rakkun
+              {userName}
               <span className="text-2xl">🤘</span>
             </h2>
             <p className="text-green-500">online</p>

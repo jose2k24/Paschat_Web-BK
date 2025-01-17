@@ -9,6 +9,15 @@ import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
+// Mock data for users
+const mockUsers: Record<string, { name: string; online: boolean }> = {
+  "1": { name: "Pizza", online: true },
+  "2": { name: "Elon", online: false },
+  "3": { name: "Pasha", online: true },
+  "4": { name: "void", online: false },
+  "5": { name: "PasChat Support", online: true },
+};
+
 export const ChatArea = () => {
   const { chatId = "", groupId, channelId } = useParams();
   const [message, setMessage] = useState("");
@@ -67,14 +76,15 @@ export const ChatArea = () => {
 
   const isChannel = !!channelId;
   const isGroup = !!groupId;
+  const currentChat = chatId ? mockUsers[chatId] : null;
 
   return (
     <div className="flex-1 flex h-full">
       <div className="flex-1 flex flex-col bg-[#0F1621]">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={isGroup ? currentGroup.name : isChannel ? currentChannel.name : "Chat"}
-          subtitle={isGroup ? `${currentGroup.membersCount} members` : isChannel ? `${currentChannel.subscribersCount} subscribers` : "online"}
+          title={isGroup ? currentGroup.name : isChannel ? currentChannel.name : currentChat?.name || "Chat"}
+          subtitle={isGroup ? `${currentGroup.membersCount} members` : isChannel ? `${currentChannel.subscribersCount} subscribers` : currentChat?.online ? "online" : "offline"}
         />
         <MessageList messages={messages} currentUser={currentUser} />
         {(!isChannel || currentChannel.isOwner) && (
@@ -92,7 +102,11 @@ export const ChatArea = () => {
           className="hidden"
           accept="image/*,video/*,application/*"
         />
-        <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />
+        <ProfilePopup 
+          open={profileOpen} 
+          onOpenChange={setProfileOpen}
+          userName={currentChat?.name || ""}
+        />
       </div>
       {isGroup && <GroupProfileSidebar group={currentGroup} />}
       {isChannel && <ChannelProfileSidebar channel={currentChannel} />}
