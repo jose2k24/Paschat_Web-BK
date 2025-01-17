@@ -25,6 +25,8 @@ const App: React.FC = () => {
               <Route path="/verify" element={<OTPVerification />} />
               <Route path="/" element={<Index />} />
               <Route path="/chat/:chatId" element={<Index />} />
+              <Route path="/group/:groupId" element={<Index />} />
+              <Route path="/channel/:channelId" element={<Index />} />
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/saved-messages" element={<Index />} />
               <Route path="/settings/*" element={<Settings />} />

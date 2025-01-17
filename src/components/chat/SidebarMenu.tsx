@@ -1,4 +1,4 @@
-import { Menu, User, Bookmark, Moon, Sun, Bug, Settings, HelpCircle } from "lucide-react";
+import { Menu, User, Bookmark, Moon, Sun, Bug, Settings, HelpCircle, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -28,6 +28,12 @@ export const SidebarMenu = () => {
     document.documentElement.classList.toggle("dark");
     localStorage.setItem("theme", newTheme);
     toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode activated`);
+  };
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   const handleNavigation = (path: string) => {
@@ -78,6 +84,14 @@ export const SidebarMenu = () => {
           </span>
           <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
         </div>
+        <DropdownMenuSeparator className="bg-gray-700" />
+        <DropdownMenuItem 
+          className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer text-red-500"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log Out</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
