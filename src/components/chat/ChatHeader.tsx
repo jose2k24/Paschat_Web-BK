@@ -2,15 +2,16 @@ import { ArrowLeft, Phone, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatMenu } from "./ChatMenu";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { useState } from "react";
 import { CallInterface } from "./CallInterface";
 
 interface ChatHeaderProps {
   onProfileClick: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export const ChatHeader = ({ onProfileClick }: ChatHeaderProps) => {
+export const ChatHeader = ({ onProfileClick, title = "User", subtitle = "online" }: ChatHeaderProps) => {
   const navigate = useNavigate();
   const [callType, setCallType] = useState<"voice" | "video" | null>(null);
 
@@ -38,11 +39,11 @@ export const ChatHeader = ({ onProfileClick }: ChatHeaderProps) => {
           onClick={onProfileClick}
         >
           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
-            M
+            {title[0]}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">Muste</h2>
-            <p className="text-sm text-gray-400">online</p>
+            <h2 className="text-lg font-semibold text-white">{title}</h2>
+            <p className="text-sm text-gray-400">{subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
