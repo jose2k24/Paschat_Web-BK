@@ -11,8 +11,9 @@ import { Globe, Settings as SettingsIcon, Bell, HardDrive, Lock, Folders, Smartp
 
 const Settings = () => {
   return (
-    <div className="flex h-full bg-[#17212B]">
-      <div className="w-64 border-r border-gray-700 bg-[#17212B]">
+    <div className="flex h-screen bg-[#17212B]">
+      {/* Sidebar */}
+      <div className="w-64 min-h-full border-r border-gray-700 bg-[#17212B] flex-shrink-0">
         <nav className="p-4 space-y-2">
           {[
             { path: "general", label: "General", icon: SettingsIcon },
@@ -42,18 +43,21 @@ const Settings = () => {
         </nav>
       </div>
       
-      <div className="flex-1 overflow-y-auto bg-[#17212B] p-6">
-        <Routes>
-          <Route path="general" element={<GeneralSettings />} />
-          <Route path="animations" element={<AnimationsSettings />} />
-          <Route path="notifications" element={<NotificationsSettings />} />
-          <Route path="data-storage" element={<DataStorageSettings />} />
-          <Route path="privacy-security" element={<PrivacySecuritySettings />} />
-          <Route path="chat-folders" element={<ChatFoldersSettings />} />
-          <Route path="devices" element={<DevicesSettings />} />
-          <Route path="language" element={<LanguageSettings />} />
-          <Route path="*" element={<GeneralSettings />} />
-        </Routes>
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto bg-[#17212B]">
+        <div className="min-h-full p-6">
+          <Routes>
+            <Route path="general" element={<GeneralSettings />} />
+            <Route path="animations" element={<AnimationsSettings />} />
+            <Route path="notifications" element={<NotificationsSettings />} />
+            <Route path="data-storage" element={<DataStorageSettings />} />
+            <Route path="privacy-security" element={<PrivacySecuritySettings />} />
+            <Route path="chat-folders" element={<ChatFoldersSettings />} />
+            <Route path="devices" element={<DevicesSettings />} />
+            <Route path="language" element={<LanguageSettings />} />
+            <Route path="*" element={<GeneralSettings />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );
