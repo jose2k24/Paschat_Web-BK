@@ -1,7 +1,7 @@
 import { Routes, Route, NavLink } from "react-router-dom";
-import { GeneralSettings } from "./settings/GeneralSettings";
-import { AnimationsSettings } from "./settings/AnimationsSettings";
-import { NotificationsSettings } from "./settings/NotificationsSettings";
+import GeneralSettings from "./settings/GeneralSettings";
+import AnimationsSettings from "./settings/AnimationsSettings";
+import NotificationsSettings from "./settings/NotificationsSettings";
 import { DataStorageSettings } from "./settings/DataStorageSettings";
 import { PrivacySecuritySettings } from "./settings/PrivacySecuritySettings";
 import { ChatFoldersSettings } from "./settings/ChatFoldersSettings";

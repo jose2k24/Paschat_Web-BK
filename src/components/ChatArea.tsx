@@ -18,14 +18,16 @@ const mockUsers: Record<string, { name: string; online: boolean }> = {
   "5": { name: "PasChat Support", online: true },
 };
 
-const mockGroups: Record<string, { name: string; membersCount: number; description?: string; isAdmin: boolean }> = {
+const mockGroups: Record<string, { id: string; name: string; membersCount: number; description?: string; isAdmin: boolean }> = {
   "g1": {
+    id: "g1",
     name: "Tech Enthusiasts",
     membersCount: 1250,
     description: "A group for tech lovers",
     isAdmin: true,
   },
   "g2": {
+    id: "g2",
     name: "Travel Adventures",
     membersCount: 3420,
     description: "Share your travel experiences",
@@ -33,14 +35,16 @@ const mockGroups: Record<string, { name: string; membersCount: number; descripti
   },
 };
 
-const mockChannels: Record<string, { name: string; subscribersCount: number; description?: string; isOwner: boolean }> = {
+const mockChannels: Record<string, { id: string; name: string; subscribersCount: number; description?: string; isOwner: boolean }> = {
   "c1": {
+    id: "c1",
     name: "Tech News Daily",
     subscribersCount: 25000,
     description: "Your daily dose of tech news",
     isOwner: true,
   },
   "c2": {
+    id: "c2",
     name: "Movie Reviews",
     subscribersCount: 15000,
     description: "Expert movie reviews and discussions",
