@@ -9,13 +9,43 @@ import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
-// Mock data for users
+// Mock data for users, groups, and channels
 const mockUsers: Record<string, { name: string; online: boolean }> = {
   "1": { name: "Pizza", online: true },
   "2": { name: "Elon", online: false },
   "3": { name: "Pasha", online: true },
   "4": { name: "void", online: false },
   "5": { name: "PasChat Support", online: true },
+};
+
+const mockGroups: Record<string, { name: string; membersCount: number; description?: string; isAdmin: boolean }> = {
+  "g1": {
+    name: "Tech Enthusiasts",
+    membersCount: 1250,
+    description: "A group for tech lovers",
+    isAdmin: true,
+  },
+  "g2": {
+    name: "Travel Adventures",
+    membersCount: 3420,
+    description: "Share your travel experiences",
+    isAdmin: false,
+  },
+};
+
+const mockChannels: Record<string, { name: string; subscribersCount: number; description?: string; isOwner: boolean }> = {
+  "c1": {
+    name: "Tech News Daily",
+    subscribersCount: 25000,
+    description: "Your daily dose of tech news",
+    isOwner: true,
+  },
+  "c2": {
+    name: "Movie Reviews",
+    subscribersCount: 15000,
+    description: "Expert movie reviews and discussions",
+    isOwner: false,
+  },
 };
 
 export const ChatArea = () => {
@@ -27,22 +57,9 @@ export const ChatArea = () => {
   const [currentUser] = useState("current_user");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Mock data for demonstration
-  const currentGroup = {
-    id: groupId || "",
-    name: "Tech Enthusiasts",
-    membersCount: 1250,
-    description: "A group for tech lovers",
-    isAdmin: true,
-  };
-
-  const currentChannel = {
-    id: channelId || "",
-    name: "Tech News Daily",
-    subscribersCount: 25000,
-    description: "Your daily dose of tech news",
-    isOwner: false,
-  };
+  const currentChat = chatId ? mockUsers[chatId] : null;
+  const currentGroup = groupId ? mockGroups[groupId] : null;
+  const currentChannel = channelId ? mockChannels[channelId] : null;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,20 +91,43 @@ export const ChatArea = () => {
     }
   };
 
-  const isChannel = !!channelId;
-  const isGroup = !!groupId;
-  const currentChat = chatId ? mockUsers[chatId] : null;
+  const getHeaderInfo = () => {
+    if (currentChannel) {
+      return {
+        title: currentChannel.name,
+        subtitle: `${currentChannel.subscribersCount} subscribers`,
+      };
+    }
+    if (currentGroup) {
+      return {
+        title: currentGroup.name,
+        subtitle: `${currentGroup.membersCount} members`,
+      };
+    }
+    if (currentChat) {
+      return {
+        title: currentChat.name,
+        subtitle: currentChat.online ? "online" : "offline",
+      };
+    }
+    return {
+      title: "Select a chat",
+      subtitle: "",
+    };
+  };
+
+  const headerInfo = getHeaderInfo();
 
   return (
     <div className="flex-1 flex h-full">
       <div className="flex-1 flex flex-col bg-[#0F1621]">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={isGroup ? currentGroup.name : isChannel ? currentChannel.name : currentChat?.name || "Chat"}
-          subtitle={isGroup ? `${currentGroup.membersCount} members` : isChannel ? `${currentChannel.subscribersCount} subscribers` : currentChat?.online ? "online" : "offline"}
+          title={headerInfo.title}
+          subtitle={headerInfo.subtitle}
         />
         <MessageList messages={messages} currentUser={currentUser} />
-        {(!isChannel || currentChannel.isOwner) && (
+        {(!currentChannel || currentChannel.isOwner) && (
           <MessageInput
             message={message}
             onMessageChange={setMessage}
@@ -105,11 +145,11 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen} 
           onOpenChange={setProfileOpen}
-          userName={currentChat?.name || ""}
+          userName={headerInfo.title}
         />
       </div>
-      {isGroup && <GroupProfileSidebar group={currentGroup} />}
-      {isChannel && <ChannelProfileSidebar channel={currentChannel} />}
+      {currentGroup && <GroupProfileSidebar group={currentGroup} />}
+      {currentChannel && <ChannelProfileSidebar channel={currentChannel} />}
     </div>
   );
 };
