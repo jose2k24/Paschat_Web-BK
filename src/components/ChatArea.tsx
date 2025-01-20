@@ -67,10 +67,16 @@ export const ChatArea = () => {
   const currentChannel = channelId ? mockChannels[channelId] : null;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+    
+    scrollToBottom();
+    const timer = setTimeout(scrollToBottom, 100); // Ensure scroll after images load
+    
+    return () => clearTimeout(timer);
   }, [messages]);
 
-  // Simulate typing indicator
   useEffect(() => {
     if (message && !isTyping) {
       setIsTyping(true);
@@ -145,6 +151,7 @@ export const ChatArea = () => {
           currentUser={currentUser}
           isTyping={isTyping}
         />
+        <div ref={messagesEndRef} />
         {(!currentChannel || currentChannel.isOwner) && (
           <MessageInput
             message={message}

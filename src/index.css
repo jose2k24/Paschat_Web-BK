@@ -34,21 +34,35 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   .message {
-    @apply p-3 rounded-lg max-w-[80%] animate-message-in;
+    @apply p-3.5 rounded-2xl max-w-[80%] animate-message-in relative;
   }
 
   .message-sent {
-    @apply bg-telegram-blue text-white ml-auto;
+    @apply bg-gradient-to-br from-telegram-blue to-telegram-secondary text-white ml-auto rounded-tr-none;
   }
 
   .message-received {
-    @apply bg-[#8774E1] text-white;
+    @apply bg-gradient-to-br from-[#8774E1] to-[#7B68E0] text-white rounded-tl-none;
   }
 
   .message a {
-    @apply underline;
+    @apply underline underline-offset-2;
+  }
+
+  /* Improved scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-700/50 rounded-full hover:bg-gray-600/50 transition-colors;
   }
 }
