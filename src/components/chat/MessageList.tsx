@@ -1,8 +1,9 @@
 import { Message } from "@/types/chat";
-import { FileIcon, Check, CheckCheck } from "lucide-react";
+import { FileIcon, Check, CheckCheck, Play, Download } from "lucide-react";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { Avatar } from "../ui/avatar";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface MessageListProps {
   messages: Message[];
@@ -11,16 +12,66 @@ interface MessageListProps {
 }
 
 export const MessageList = ({ messages, currentUser, isTyping }: MessageListProps) => {
-  const isFirstInStack = (index: number, message: Message) => {
+  const isFirstInGroup = (index: number, message: Message) => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
-    return prevMessage.sender_id !== message.sender_id;
+    return prevMessage.sender_id !== message.sender_id || 
+           new Date(message.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000;
   };
 
-  const isLastInStack = (index: number, message: Message) => {
+  const isLastInGroup = (index: number, message: Message) => {
     if (index === messages.length - 1) return true;
     const nextMessage = messages[index + 1];
-    return nextMessage.sender_id !== message.sender_id;
+    return nextMessage.sender_id !== message.sender_id || 
+           new Date(nextMessage.created_at).getTime() - new Date(message.created_at).getTime() > 300000;
+  };
+
+  const renderMessageContent = (msg: Message) => {
+    switch (msg.type) {
+      case "text":
+        return <p className="text-[15px] leading-relaxed">{msg.content}</p>;
+      case "image":
+        return (
+          <div className="relative group">
+            <img
+              src={msg.media_url}
+              alt={msg.content}
+              className="w-full max-w-[300px] rounded-lg"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+              <button className="text-white hover:scale-110 transition-transform">
+                Click to view
+              </button>
+            </div>
+          </div>
+        );
+      case "video":
+        return (
+          <div className="relative group">
+            <video
+              src={msg.media_url}
+              className="w-full max-w-[300px] rounded-lg"
+            />
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <Play className="w-12 h-12 text-white/90" />
+            </div>
+          </div>
+        );
+      case "document":
+        return (
+          <div className="message-document">
+            <FileIcon className="h-6 w-6 text-gray-300" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{msg.content}</p>
+              <p className="text-xs text-gray-400">Document</p>
+            </div>
+            <Download className="h-5 w-5 text-gray-300 hover:text-white transition-colors" />
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -37,51 +88,23 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
             "flex items-end gap-2",
             msg.sender_id === currentUser ? "justify-end" : "justify-start"
           )}>
-            {msg.sender_id !== currentUser && isFirstInStack(index, msg) && (
+            {msg.sender_id !== currentUser && isFirstInGroup(index, msg) && (
               <Avatar className="w-8 h-8" />
             )}
-            <div
-              className={cn(
-                "message group",
-                msg.sender_id === currentUser ? "message-sent" : "message-received",
-                !isLastInStack(index, msg) && "mb-1"
+            <div className={cn(
+              "message",
+              msg.sender_id === currentUser ? "message-sent" : "message-received",
+              !isLastInGroup(index, msg) && "mb-1"
+            )}>
+              {isFirstInGroup(index, msg) && (
+                <div className="message-group-timestamp">
+                  {format(new Date(msg.created_at), "h:mm a")}
+                </div>
               )}
-            >
-              {msg.type === "text" && (
-                <p className="text-[15px] leading-relaxed">{msg.content}</p>
-              )}
-              {msg.type === "image" && (
-                <img
-                  src={msg.media_url}
-                  alt={msg.content}
-                  className="w-full max-w-[300px]"
-                  loading="lazy"
-                />
-              )}
-              {msg.type === "video" && (
-                <video
-                  src={msg.media_url}
-                  controls
-                  className="w-full max-w-[300px]"
-                />
-              )}
-              {msg.type === "document" && (
-                <a
-                  href={msg.media_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-blue-200 hover:text-blue-100 transition-colors"
-                >
-                  <FileIcon className="h-4 w-4" />
-                  <span className="truncate">{msg.content}</span>
-                </a>
-              )}
+              {renderMessageContent(msg)}
               <div className="flex items-center gap-1.5 justify-end mt-1">
                 <span className="message-timestamp">
-                  {new Date(msg.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {format(new Date(msg.created_at), "h:mm a")}
                 </span>
                 {msg.sender_id === currentUser && (
                   <span className="message-status">

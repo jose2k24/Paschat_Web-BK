@@ -1,6 +1,7 @@
-import { Send, Link2, Smile } from "lucide-react";
+import { Paperclip, Send, Smile, Image, Gif } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VoiceRecorder } from "./VoiceRecorder";
 import data from '@emoji-mart/data';
@@ -31,26 +32,62 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="p-4 border-t border-gray-700">
-      <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-gray-400 hover:text-white hover:bg-gray-700"
-          onClick={onFileClick}
-        >
-          <Link2 className="h-5 w-5" />
-        </Button>
-        <div className="flex-1 flex gap-2">
-          <Input
-            placeholder="Message"
-            value={message}
-            onChange={(e) => onMessageChange(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 focus-visible:ring-gray-700"
-          />
-          <VoiceRecorder />
-          <Popover>
+    <div className="input-area">
+      <div className="input-actions">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+              onClick={onFileClick}
+            >
+              <Paperclip className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Attach file</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+              onClick={onFileClick}
+            >
+              <Image className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Send photo or video</TooltipContent>
+        </Tooltip>
+      </div>
+      
+      <div className="input-wrapper">
+        <Textarea
+          value={message}
+          onChange={(e) => onMessageChange(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Write a message..."
+          className="message-input"
+        />
+      </div>
+
+      <div className="input-actions">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-400 hover:text-white hover:bg-gray-700"
+            >
+              <Gif className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Send GIF</TooltipContent>
+        </Tooltip>
+        
+        <Popover>
+          <TooltipTrigger asChild>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
@@ -60,11 +97,14 @@ export const MessageInput = ({
                 <Smile className="h-5 w-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
-            </PopoverContent>
-          </Popover>
-        </div>
+          </TooltipTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
+          </PopoverContent>
+        </Popover>
+
+        <VoiceRecorder />
+
         <Button
           onClick={onSend}
           className="bg-telegram-blue hover:bg-telegram-hover text-white"

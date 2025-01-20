@@ -27,7 +27,7 @@
     --ring: 201 78% 55%;
     --radius: 0.75rem;
   }
- 
+
   * {
     @apply border-border;
   }
@@ -38,7 +38,8 @@
   }
 
   .message {
-    @apply p-4 rounded-2xl max-w-[60%] md:max-w-[80%] animate-message-in relative mb-2 break-words;
+    @apply p-4 rounded-2xl max-w-[70%] md:max-w-[60%] relative mb-2 break-words min-w-[120px] transition-all duration-200;
+    animation: scale-in 0.2s ease-out forwards;
   }
 
   .message-sent {
@@ -50,7 +51,15 @@
   }
 
   .message-stack {
-    @apply space-y-1;
+    @apply space-y-2 mb-4;
+  }
+
+  .message-group {
+    @apply flex flex-col gap-1;
+  }
+
+  .message-group-timestamp {
+    @apply text-xs text-gray-400 mb-1 px-4;
   }
 
   .message a {
@@ -59,6 +68,10 @@
 
   .message img, .message video {
     @apply rounded-lg cursor-pointer hover:opacity-95 transition-opacity max-h-[300px] object-contain my-1;
+  }
+
+  .message-document {
+    @apply flex items-center gap-3 p-3 rounded-lg bg-black/20 hover:bg-black/30 transition-colors cursor-pointer;
   }
 
   .message-timestamp {
@@ -70,7 +83,7 @@
   }
 
   .typing-indicator {
-    @apply flex items-center gap-1 p-2 rounded-full bg-gray-800/50 w-auto animate-fade-in;
+    @apply flex items-center gap-1 p-2 rounded-full bg-gray-800/50 w-auto animate-fade-in ml-4;
   }
 
   .typing-dot {
@@ -88,5 +101,23 @@
 
   ::-webkit-scrollbar-thumb {
     @apply bg-gray-700/50 rounded-full hover:bg-gray-600/50 transition-colors;
+  }
+
+  .input-area {
+    @apply flex items-end gap-2 p-4 border-t border-gray-700/50 bg-telegram-darker;
+  }
+
+  .input-wrapper {
+    @apply flex-1 relative;
+  }
+
+  .message-input {
+    @apply w-full rounded-xl bg-gray-800/50 border-gray-700/50 focus:border-telegram-blue transition-colors resize-none py-3 px-4 text-white placeholder:text-gray-400;
+    min-height: 44px;
+    max-height: 200px;
+  }
+
+  .input-actions {
+    @apply flex items-center gap-2;
   }
 }
