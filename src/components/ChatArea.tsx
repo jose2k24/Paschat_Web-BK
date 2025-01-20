@@ -68,11 +68,15 @@ export const ChatArea = () => {
 
   useEffect(() => {
     const scrollToBottom = () => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (messagesEndRef.current) {
+        const behavior = messages.length <= 1 ? "auto" : "smooth";
+        messagesEndRef.current.scrollIntoView({ behavior });
+      }
     };
     
     scrollToBottom();
-    const timer = setTimeout(scrollToBottom, 100); // Ensure scroll after images load
+    // Ensure scroll after images load
+    const timer = setTimeout(scrollToBottom, 100);
     
     return () => clearTimeout(timer);
   }, [messages]);
