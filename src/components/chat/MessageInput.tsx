@@ -1,4 +1,4 @@
-import { Paperclip, Send, Smile, Image, Gif } from "lucide-react";
+import { Paperclip, Send, Smile, Image, Sticker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -80,10 +80,10 @@ export const MessageInput = ({
               size="icon"
               className="text-gray-400 hover:text-white hover:bg-gray-700"
             >
-              <Gif className="h-5 w-5" />
+              <Sticker className="h-5 w-5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Send GIF</TooltipContent>
+          <TooltipContent>Send Sticker</TooltipContent>
         </Tooltip>
         
         <Popover>
