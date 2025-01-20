@@ -87,17 +87,20 @@ export const MessageInput = ({
         </Tooltip>
         
         <Popover>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-gray-400 hover:text-white hover:bg-gray-700"
-              >
-                <Smile className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-          </TooltipTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-gray-400 hover:text-white hover:bg-gray-700"
+                >
+                  <Smile className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Add emoji</TooltipContent>
+          </Tooltip>
           <PopoverContent className="w-auto p-0" align="end">
             <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
           </PopoverContent>
