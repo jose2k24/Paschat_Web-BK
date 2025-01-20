@@ -4,6 +4,9 @@ import { ChatTabs } from "./chat/ChatTabs";
 import { ChatSearch } from "./chat/ChatSearch";
 import { ChatList } from "./chat/ChatList";
 import { StoriesSection } from "./chat/StoriesSection";
+import { Button } from "./ui/button";
+import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface Chat {
   id: string;
@@ -126,6 +129,10 @@ export const ChatSidebar = () => {
     }
   };
 
+  const handleNewChat = () => {
+    toast.info("New chat feature coming soon!");
+  };
+
   const getFilteredItems = () => {
     const searchLower = search.toLowerCase();
     switch (activeTab) {
@@ -145,7 +152,7 @@ export const ChatSidebar = () => {
   };
 
   return (
-    <div className="w-full md:w-80 h-full border-r flex flex-col bg-telegram-dark text-white">
+    <div className="w-full md:w-80 h-full flex flex-col bg-telegram-dark text-white relative">
       <div className="p-4 border-b border-gray-700">
         <ChatTabs activeTab={activeTab} onTabChange={setActiveTab} />
         <ChatSearch value={search} onChange={setSearch} />
@@ -158,6 +165,12 @@ export const ChatSidebar = () => {
           onChatSelect={handleChatSelect}
         />
       </div>
+      <Button
+        onClick={handleNewChat}
+        className="absolute bottom-6 right-6 rounded-full w-14 h-14 bg-telegram-blue hover:bg-telegram-hover shadow-lg transition-all duration-200 hover:scale-105"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </div>
   );
 };

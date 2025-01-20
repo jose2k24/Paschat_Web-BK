@@ -56,6 +56,7 @@ export const ChatArea = () => {
   const { chatId = "", groupId, channelId } = useParams();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { messages, sendMessage } = useMessages(chatId || groupId || channelId || "");
   const [currentUser] = useState("current_user");
@@ -68,6 +69,15 @@ export const ChatArea = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Simulate typing indicator
+  useEffect(() => {
+    if (message && !isTyping) {
+      setIsTyping(true);
+      const timeout = setTimeout(() => setIsTyping(false), 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [message]);
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -124,13 +134,17 @@ export const ChatArea = () => {
 
   return (
     <div className="flex-1 flex h-full">
-      <div className="flex-1 flex flex-col bg-[#0F1621]">
+      <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
           title={headerInfo.title}
           subtitle={headerInfo.subtitle}
         />
-        <MessageList messages={messages} currentUser={currentUser} />
+        <MessageList 
+          messages={messages} 
+          currentUser={currentUser}
+          isTyping={isTyping}
+        />
         {(!currentChannel || currentChannel.isOwner) && (
           <MessageInput
             message={message}

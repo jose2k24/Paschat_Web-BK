@@ -5,9 +5,10 @@ import { MessageContextMenu } from "./MessageContextMenu";
 interface MessageListProps {
   messages: Message[];
   currentUser: string | null;
+  isTyping?: boolean;
 }
 
-export const MessageList = ({ messages, currentUser }: MessageListProps) => {
+export const MessageList = ({ messages, currentUser, isTyping }: MessageListProps) => {
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
       {messages.map((msg) => (
@@ -65,6 +66,15 @@ export const MessageList = ({ messages, currentUser }: MessageListProps) => {
           </div>
         </MessageContextMenu>
       ))}
+      {isTyping && (
+        <div className="message message-received !bg-gray-800/50 !w-auto">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing" style={{ animationDelay: "0ms" }} />
+            <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing" style={{ animationDelay: "150ms" }} />
+            <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing" style={{ animationDelay: "300ms" }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
