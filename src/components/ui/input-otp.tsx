@@ -51,9 +51,12 @@ const InputOTPSlot = React.forwardRef<
       )}
       {...props}
     >
-      {char || (
-        <span className="text-muted-foreground animate-pulse">-</span>
-      )}
+      <span className={cn(
+        "text-2xl font-bold",
+        char ? "text-white" : "text-muted-foreground/40"
+      )}>
+        {char || "-"}
+      </span>
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
