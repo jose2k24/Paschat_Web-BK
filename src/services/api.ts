@@ -106,6 +106,22 @@ class ApiService {
       body: formData,
     });
   }
+
+  // Call endpoints
+  async getCallHistory(chatId: string) {
+    return this.request(`/calls/history/${chatId}`);
+  }
+
+  async saveCallMetadata(callData: {
+    chatId: string;
+    type: "audio" | "video";
+    duration: number;
+  }) {
+    return this.request("/calls/metadata", {
+      method: "POST",
+      body: JSON.stringify(callData),
+    });
+  }
 }
 
 export const apiService = ApiService.getInstance();

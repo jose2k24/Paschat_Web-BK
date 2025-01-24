@@ -11,6 +11,7 @@ class WebSocketService {
   private messageHandlers: Map<string, ((data: any) => void)[]> = new Map();
   private reconnectAttempts = 0;
   private readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private authToken: string | null = null;
 
   private constructor() {}
 
@@ -21,12 +22,22 @@ class WebSocketService {
     return WebSocketService.instance;
   }
 
-  connect(authToken: string) {
+  setAuthToken(token: string) {
+    this.authToken = token;
+  }
+
+  connect() {
     try {
       this.ws = new WebSocket("wss://api.paschat.net/ws");
       
       this.ws.onopen = () => {
         console.log("WebSocket Connected");
+        if (this.authToken) {
+          this.send({
+            action: "authenticate",
+            data: { token: this.authToken }
+          });
+        }
         this.reconnectAttempts = 0;
       };
 
@@ -42,7 +53,7 @@ class WebSocketService {
 
       this.ws.onclose = () => {
         console.log("WebSocket disconnected");
-        this.attemptReconnect(authToken);
+        this.attemptReconnect();
       };
     } catch (error) {
       console.error("WebSocket connection error:", error);
@@ -50,11 +61,11 @@ class WebSocketService {
     }
   }
 
-  private attemptReconnect(authToken: string) {
+  private attemptReconnect() {
     if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
       this.reconnectAttempts++;
       setTimeout(() => {
-        this.connect(authToken);
+        this.connect();
       }, 1000 * this.reconnectAttempts);
     }
   }

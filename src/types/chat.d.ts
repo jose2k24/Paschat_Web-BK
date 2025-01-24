@@ -3,7 +3,7 @@ export interface Message {
   content: string;
   sender_id: string;
   chat_id: string;
-  type: "text" | "image" | "video" | "document";
+  type: "text" | "image" | "video" | "document" | "audio";
   media_url?: string;
   is_edited: boolean;
   created_at: string;
@@ -22,6 +22,7 @@ export interface Message {
     message_id: string;
     sender_name: string;
   };
+  call_type?: "audio" | "video" | null;
 }
 
 export interface Chat {
@@ -42,4 +43,11 @@ export interface Chat {
     can_pin_messages: boolean;
     can_change_info: boolean;
   };
+}
+
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: string | null;
+  stream: MediaStream | null;
 }
