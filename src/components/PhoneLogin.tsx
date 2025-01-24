@@ -9,37 +9,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getCountries } from "world-countries";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
 }
 
 interface Country {
-  name: string;
-  code: string;
-  dialCode: string;
+  name: {
+    common: string;
+  };
+  cca2: string;
+  idd: {
+    root: string;
+    suffixes: string[];
+  };
 }
-
-const countries: Country[] = [
-  { name: "Ethiopia", code: "ET", dialCode: "+251" },
-  { name: "United States", code: "US", dialCode: "+1" },
-  { name: "United Kingdom", code: "GB", dialCode: "+44" },
-  { name: "India", code: "IN", dialCode: "+91" },
-  { name: "China", code: "CN", dialCode: "+86" },
-];
 
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   const navigate = useNavigate();
-  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]);
-  const [phoneNumber, setPhoneNumber] = useState(selectedCountry.dialCode);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [keepSignedIn, setKeepSignedIn] = useState(false);
+
+  useEffect(() => {
+    const fetchedCountries = getCountries().sort((a, b) => 
+      a.name.common.localeCompare(b.name.common)
+    );
+    setCountries(fetchedCountries);
+    // Set default country (first country in the sorted list)
+    if (fetchedCountries.length > 0) {
+      setSelectedCountry(fetchedCountries[0]);
+      setPhoneNumber(getDialCode(fetchedCountries[0]));
+    }
+  }, []);
+
+  const getDialCode = (country: Country): string => {
+    if (country.idd.root) {
+      const suffix = country.idd.suffixes?.[0] || "";
+      return `${country.idd.root}${suffix}`;
+    }
+    return "";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const numberWithoutCode = phoneNumber.replace(selectedCountry.dialCode, "").trim();
+    const numberWithoutCode = phoneNumber.replace(getDialCode(selectedCountry!), "").trim();
     
     if (numberWithoutCode === "1234567890") {
       toast.success("Verification code sent");
@@ -50,10 +69,11 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   };
 
   const handleCountryChange = (value: string) => {
-    const country = countries.find((c) => c.code === value);
+    const country = countries.find((c) => c.cca2 === value);
     if (country) {
       setSelectedCountry(country);
-      setPhoneNumber(country.dialCode);
+      const dialCode = getDialCode(country);
+      setPhoneNumber(dialCode);
     }
   };
 
@@ -78,22 +98,22 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
               Country
             </Label>
             <Select
-              value={selectedCountry.code}
+              value={selectedCountry?.cca2}
               onValueChange={handleCountryChange}
             >
               <SelectTrigger className="bg-transparent border-pink-500/20 text-white">
                 <SelectValue placeholder="Select a country">
-                  {selectedCountry.name}
+                  {selectedCountry?.name.common}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-[#1A1F2C] border-pink-500/20">
+              <SelectContent className="bg-[#1A1F2C] border-pink-500/20 max-h-[300px]">
                 {countries.map((country) => (
                   <SelectItem
-                    key={country.code}
-                    value={country.code}
+                    key={country.cca2}
+                    value={country.cca2}
                     className="text-white hover:bg-pink-500/20"
                   >
-                    {country.name} ({country.dialCode})
+                    {country.name.common} ({getDialCode(country)})
                   </SelectItem>
                 ))}
               </SelectContent>
