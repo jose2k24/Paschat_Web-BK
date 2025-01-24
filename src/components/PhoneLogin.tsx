@@ -12,7 +12,7 @@ import {
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getCountries } from "world-countries";
+import countries from "world-countries";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
@@ -31,20 +31,20 @@ interface Country {
 
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   const navigate = useNavigate();
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [countryList, setCountryList] = useState<Country[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [keepSignedIn, setKeepSignedIn] = useState(false);
 
   useEffect(() => {
-    const fetchedCountries = getCountries().sort((a, b) => 
+    const sortedCountries = countries.sort((a, b) => 
       a.name.common.localeCompare(b.name.common)
     );
-    setCountries(fetchedCountries);
+    setCountryList(sortedCountries);
     // Set default country (first country in the sorted list)
-    if (fetchedCountries.length > 0) {
-      setSelectedCountry(fetchedCountries[0]);
-      setPhoneNumber(getDialCode(fetchedCountries[0]));
+    if (sortedCountries.length > 0) {
+      setSelectedCountry(sortedCountries[0]);
+      setPhoneNumber(getDialCode(sortedCountries[0]));
     }
   }, []);
 
@@ -69,7 +69,7 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   };
 
   const handleCountryChange = (value: string) => {
-    const country = countries.find((c) => c.cca2 === value);
+    const country = countryList.find((c) => c.cca2 === value);
     if (country) {
       setSelectedCountry(country);
       const dialCode = getDialCode(country);
@@ -107,7 +107,7 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-[#1A1F2C] border-pink-500/20 max-h-[300px]">
-                {countries.map((country) => (
+                {countryList.map((country) => (
                   <SelectItem
                     key={country.cca2}
                     value={country.cca2}
