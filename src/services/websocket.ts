@@ -1,32 +1,102 @@
-type MessageHandler = (message: any) => void;
+import { toast } from "sonner";
+
+export interface WebSocketMessage {
+  action: string;
+  data?: any;
+}
 
 class WebSocketService {
+  private static instance: WebSocketService;
   private ws: WebSocket | null = null;
-  private messageHandlers: Set<MessageHandler> = new Set();
+  private messageHandlers: Map<string, ((data: any) => void)[]> = new Map();
+  private reconnectAttempts = 0;
+  private readonly MAX_RECONNECT_ATTEMPTS = 5;
 
-  connect(userId: string) {
-    this.ws = new WebSocket(`wss://your-websocket-server.com/${userId}`);
-    
-    this.ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      this.messageHandlers.forEach(handler => handler(message));
-    };
+  private constructor() {}
 
-    this.ws.onclose = () => {
-      setTimeout(() => this.connect(userId), 1000);
+  static getInstance(): WebSocketService {
+    if (!WebSocketService.instance) {
+      WebSocketService.instance = new WebSocketService();
+    }
+    return WebSocketService.instance;
+  }
+
+  connect(authToken: string) {
+    try {
+      this.ws = new WebSocket("wss://api.paschat.net/ws");
+      
+      this.ws.onopen = () => {
+        console.log("WebSocket Connected");
+        this.reconnectAttempts = 0;
+      };
+
+      this.ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        this.handleMessage(message);
+      };
+
+      this.ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        toast.error("Connection error occurred");
+      };
+
+      this.ws.onclose = () => {
+        console.log("WebSocket disconnected");
+        this.attemptReconnect(authToken);
+      };
+    } catch (error) {
+      console.error("WebSocket connection error:", error);
+      toast.error("Failed to establish connection");
+    }
+  }
+
+  private attemptReconnect(authToken: string) {
+    if (this.reconnectAttempts < this.MAX_RECONNECT_ATTEMPTS) {
+      this.reconnectAttempts++;
+      setTimeout(() => {
+        this.connect(authToken);
+      }, 1000 * this.reconnectAttempts);
+    }
+  }
+
+  subscribe(action: string, handler: (data: any) => void) {
+    if (!this.messageHandlers.has(action)) {
+      this.messageHandlers.set(action, []);
+    }
+    this.messageHandlers.get(action)?.push(handler);
+
+    return () => {
+      const handlers = this.messageHandlers.get(action);
+      if (handlers) {
+        const index = handlers.indexOf(handler);
+        if (index > -1) {
+          handlers.splice(index, 1);
+        }
+      }
     };
   }
 
-  subscribe(handler: MessageHandler) {
-    this.messageHandlers.add(handler);
-    return () => this.messageHandlers.delete(handler);
+  private handleMessage(message: WebSocketMessage) {
+    const handlers = this.messageHandlers.get(message.action);
+    if (handlers) {
+      handlers.forEach(handler => handler(message.data));
+    }
   }
 
-  send(message: any) {
+  send(message: WebSocketMessage) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
+    } else {
+      toast.error("Connection not established");
+    }
+  }
+
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
     }
   }
 }
 
-export const websocketService = new WebSocketService();
+export const wsService = WebSocketService.getInstance();

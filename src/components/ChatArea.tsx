@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ProfilePopup } from "./ProfilePopup";
-import { useMessages } from "@/hooks/useMessages";
+import { useChat } from "@/hooks/useChat";
 import { ChatHeader } from "./chat/ChatHeader";
 import { MessageList } from "./chat/MessageList";
 import { MessageInput } from "./chat/MessageInput";
@@ -58,9 +58,15 @@ export const ChatArea = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { messages, sendMessage } = useMessages(chatId || groupId || channelId || "");
-  const [currentUser] = useState("current_user");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    setTypingStatus,
+  } = useChat(chatId || groupId || channelId || "");
 
   const currentChat = chatId ? mockUsers[chatId] : null;
   const currentGroup = groupId ? mockGroups[groupId] : null;
@@ -95,6 +101,11 @@ export const ChatArea = () => {
     setMessage("");
   };
 
+  const handleMessageChange = (value: string) => {
+    setMessage(value);
+    setTypingStatus(value.length > 0);
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -107,7 +118,7 @@ export const ChatArea = () => {
         ? "video"
         : "document";
 
-      await sendMessage(file.name, fileType, mockFileUrl);
+      await sendMessage(file.name, fileType);
       toast.success("File uploaded successfully");
     } catch (error) {
       toast.error("Failed to upload file");
@@ -140,6 +151,14 @@ export const ChatArea = () => {
     };
   };
 
+  if (error) {
+    return <div className="flex-1 flex items-center justify-center text-red-500">{error}</div>;
+  }
+
+  if (isLoading) {
+    return <div className="flex-1 flex items-center justify-center">Loading...</div>;
+  }
+
   const headerInfo = getHeaderInfo();
 
   return (
@@ -151,15 +170,15 @@ export const ChatArea = () => {
           subtitle={headerInfo.subtitle}
         />
         <MessageList 
-          messages={messages} 
-          currentUser={currentUser}
+          messages={messages}
+          currentUser="current_user"
           isTyping={isTyping}
         />
         <div ref={messagesEndRef} />
         {(!currentChannel || currentChannel.isOwner) && (
           <MessageInput
             message={message}
-            onMessageChange={setMessage}
+            onMessageChange={handleMessageChange}
             onSend={handleSend}
             onFileClick={() => fileInputRef.current?.click()}
           />
@@ -172,7 +191,7 @@ export const ChatArea = () => {
           accept="image/*,video/*,application/*"
         />
         <ProfilePopup 
-          open={profileOpen} 
+          open={profileOpen}
           onOpenChange={setProfileOpen}
           userName={headerInfo.title}
         />

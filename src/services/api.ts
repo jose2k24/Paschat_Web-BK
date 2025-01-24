@@ -1,38 +1,111 @@
 import { toast } from "sonner";
 
-const API_BASE_URL = "https://api.example.com"; // Replace with your API URL
+const BASE_URL = "https://api.paschat.net/api/v1";
 
-export interface ApiResponse<T> {
+interface ApiResponse<T = any> {
   data?: T;
   error?: string;
 }
 
-export const api = {
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`);
-      const data = await response.json();
-      return { data };
-    } catch (error) {
-      toast.error("Failed to fetch data");
-      return { error: "Failed to fetch data" };
-    }
-  },
+class ApiService {
+  private static instance: ApiService;
+  private authToken: string | null = null;
 
-  async post<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  private constructor() {}
+
+  static getInstance(): ApiService {
+    if (!ApiService.instance) {
+      ApiService.instance = new ApiService();
+    }
+    return ApiService.instance;
+  }
+
+  setAuthToken(token: string) {
+    this.authToken = token;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      if (this.authToken) {
+        headers["Authorization"] = `Bearer ${this.authToken}`;
+      }
+
+      const response = await fetch(`${BASE_URL}${endpoint}`, {
+        ...options,
         headers: {
-          "Content-Type": "application/json",
+          ...headers,
+          ...options.headers,
         },
-        body: JSON.stringify(body),
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       return { data };
     } catch (error) {
-      toast.error("Failed to send data");
-      return { error: "Failed to send data" };
+      console.error("API request failed:", error);
+      toast.error("Failed to complete request");
+      return { error: "Request failed" };
     }
-  },
-};
+  }
+
+  // Auth endpoints
+  async loginWithPhone(phone: string) {
+    return this.request("/auth/user/web/login", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  }
+
+  async loginWithQRCode(webClientId: string) {
+    return this.request("/auth/user/web/qr-code/login", {
+      method: "POST",
+      body: JSON.stringify({ webClientId }),
+    });
+  }
+
+  // Chat endpoints
+  async createChatRoom(user1Phone: string, user2Phone: string) {
+    return this.request("/chat/room", {
+      method: "POST",
+      body: JSON.stringify({ user1Phone, user2Phone }),
+    });
+  }
+
+  // Contacts endpoints
+  async saveContacts(contacts: string[]) {
+    return this.request("/contacts/save", {
+      method: "POST",
+      body: JSON.stringify({ contacts }),
+    });
+  }
+
+  async getSavedContacts() {
+    return this.request("/contacts/save");
+  }
+
+  // File upload endpoint
+  async uploadMedia(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return this.request("/file/upload/media", {
+      method: "POST",
+      headers: {
+        // Don't set Content-Type here, let the browser set it with the boundary
+      },
+      body: formData,
+    });
+  }
+}
+
+export const apiService = ApiService.getInstance();
