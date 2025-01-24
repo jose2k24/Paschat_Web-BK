@@ -39,27 +39,31 @@ const InputOTPSlot = React.forwardRef<
   const inputOTPContext = React.useContext(OTPInputContext)
   const { slots = [] } = inputOTPContext || {}
   const slot = (slots[index] || {}) as OTPSlot
-  const { char = "", hasFakeCaret = false, isActive = false } = slot
+  const { char, hasFakeCaret = false, isActive = false } = slot
 
   return (
     <div
       ref={ref}
       className={cn(
-        "relative flex items-center justify-center text-center transition-all duration-200",
-        isActive && "ring-2 ring-offset-2 ring-offset-background",
+        "relative flex h-14 w-14 items-center justify-center rounded-lg border-2 text-sm transition-all duration-200",
+        isActive && "ring-2 ring-offset-2 ring-offset-background ring-telegram-blue",
+        "bg-white/10 border-white/20",
         className
       )}
       {...props}
     >
-      <span className={cn(
-        "text-2xl font-bold",
-        char ? "text-white" : "text-muted-foreground/40"
-      )}>
-        {char || "-"}
-      </span>
+      <div className="absolute inset-0 flex items-center justify-center">
+        {char ? (
+          <span className="text-2xl font-bold text-white animate-scale-in">
+            {char}
+          </span>
+        ) : (
+          <span className="text-2xl text-white/30">-</span>
+        )}
+      </div>
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <div className="h-4 w-px animate-caret-blink bg-telegram-blue duration-1000" />
         </div>
       )}
     </div>
