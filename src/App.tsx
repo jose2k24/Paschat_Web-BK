@@ -13,6 +13,9 @@ import Settings from "./pages/Settings";
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
+  // Check if user is authenticated
+  const isAuthenticated = !!localStorage.getItem('authToken');
+
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -21,17 +24,59 @@ const App: React.FC = () => {
           <Sonner position="bottom-center" />
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/verify" element={<OTPVerification />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/chat/:chatId" element={<Index />} />
-              <Route path="/group/:groupId" element={<Index />} />
-              <Route path="/channel/:channelId" element={<Index />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/saved-messages" element={<Index />} />
-              <Route path="/settings/*" element={<Settings />} />
-              <Route path="/help" element={<Index />} />
-              <Route path="/bug-report" element={<Index />} />
+              {/* Redirect root based on auth status */}
+              <Route 
+                path="/" 
+                element={isAuthenticated ? <Navigate to="/chat" replace /> : <Navigate to="/login" replace />} 
+              />
+
+              {/* Public routes */}
+              <Route 
+                path="/login" 
+                element={isAuthenticated ? <Navigate to="/chat" replace /> : <Login />} 
+              />
+              <Route 
+                path="/verify" 
+                element={isAuthenticated ? <Navigate to="/chat" replace /> : <OTPVerification />} 
+              />
+
+              {/* Protected routes */}
+              <Route 
+                path="/chat" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/chat/:chatId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/group/:groupId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/channel/:channelId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/contacts" 
+                element={isAuthenticated ? <Contacts /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/saved-messages" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/settings/*" 
+                element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/help" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/bug-report" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
