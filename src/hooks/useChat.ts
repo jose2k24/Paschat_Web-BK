@@ -8,6 +8,8 @@ export const useChat = (roomId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    wsService.connect();
+
     const handleNewMessage = (data: Message) => {
       if (data.chat_id === roomId) {
         setMessages(prev => [...prev, data]);

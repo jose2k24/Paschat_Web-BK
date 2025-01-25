@@ -1,14 +1,12 @@
 import { io, Socket } from "socket.io-client";
 
+type EventHandler = (data: any) => void;
+
 class WebSocketService {
   private socket: Socket | null = null;
   private authToken: string | null = null;
   private isConnected: boolean = false;
-  private eventHandlers: { [key: string]: { [key: string]: (data: any) => void } } = {
-    auth: {
-      response: async () => {},
-    },
-  };
+  private eventHandlers: Map<string, Set<EventHandler>> = new Map();
 
   constructor() {
     this.authToken = localStorage.getItem("authToken");
@@ -19,55 +17,65 @@ class WebSocketService {
     localStorage.setItem("authToken", token);
   }
 
-  connectToAuth() {
-    this.socket = io("https://api.paschat.net/ws/auth", {
-      auth: this.authToken ? { token: this.authToken } : undefined,
-      transports: ['websocket'],
-      secure: true,
-      rejectUnauthorized: false,
-      withCredentials: true
-    });
+  connect() {
+    if (!this.socket) {
+      this.socket = io("wss://api.paschat.net/ws", {
+        auth: this.authToken ? { token: this.authToken } : undefined,
+        transports: ['websocket'],
+        secure: true,
+        rejectUnauthorized: false,
+        withCredentials: true
+      });
 
-    this.socket.on("connect", () => {
-      console.log("Connected to auth websocket");
-      // Send the message immediately after connection
-      this.socket?.emit("request", JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    });
+      this.socket.on("connect", () => {
+        console.log("Connected to websocket");
+        this.isConnected = true;
+      });
 
-    this.socket.on("disconnect", () => {
-      console.log("Disconnected from auth websocket");
-      
-    });
+      this.socket.on("disconnect", () => {
+        console.log("Disconnected from websocket");
+        this.isConnected = false;
+      });
 
-    this.socket.on("connect_error", (error) => {
-      console.error("Connection error:", error);
-      
-    });
-
-    this.socket.on("response", (data) => {
-      this.eventHandlers.auth.response(data);
-    });
-  }
-
-  updateEventHandlers(
-    namespace: "auth",
-    event: "response",
-    handler: (data: any) => void
-  ) {
-    if (!this.eventHandlers[namespace]) {
-      this.eventHandlers[namespace] = {};
+      this.socket.on("message", (data: any) => {
+        const handlers = this.eventHandlers.get(data.action);
+        if (handlers) {
+          handlers.forEach(handler => handler(data.data));
+        }
+      });
     }
-    this.eventHandlers[namespace][event] = handler;
   }
 
+  subscribe(event: string, handler: EventHandler): () => void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, new Set());
+    }
+    this.eventHandlers.get(event)?.add(handler);
 
+    return () => {
+      const handlers = this.eventHandlers.get(event);
+      if (handlers) {
+        handlers.delete(handler);
+        if (handlers.size === 0) {
+          this.eventHandlers.delete(event);
+        }
+      }
+    };
+  }
+
+  send(message: { action: string; data?: any }) {
+    if (!this.socket?.connected) {
+      this.connect();
+    }
+    this.socket?.emit("message", message);
+  }
 
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.isConnected = false;
+      this.eventHandlers.clear();
     }
   }
 
