@@ -20,7 +20,7 @@ interface MessageContextMenuProps {
   children: React.ReactNode;
   messageId: string;
   canDelete?: boolean;
-  messageType: "text" | "image" | "video" | "document";
+  messageType: "audio"|"text" | "image" | "video" | "document";
   mediaUrl?: string;
 }
 

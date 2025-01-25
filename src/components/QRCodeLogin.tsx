@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { wsService } from "@/services/websocket";
 
 interface QRCodeLoginProps {
   onPhoneLogin: () => void;
@@ -10,56 +11,36 @@ interface QRCodeLoginProps {
 
 const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
   const [qrCodeData, setQrCodeData] = useState<string>("");
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Connect to WebSocket
-    const wsConnection = new WebSocket("wss://api.paschat.net/ws");
+    wsService.connectToAuth();
 
-    wsConnection.onopen = () => {
-      console.log("WebSocket Connected");
-      // Request QR code after connection
-      wsConnection.send(JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    };
-
-    wsConnection.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    wsService.updateEventHandlers("auth", "response", async (data: any) => {
+      const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      if (data.action === "createLoginQrCode" && data.qrCode) {
-        setQrCodeData(data.qrCode);
+      if (parsedData.qrCode) {
+        setQrCodeData(parsedData.qrCode);
       }
       
-      if (data.action === "webQrCodeLogin") {
-        // Handle successful login
-        localStorage.setItem("authToken", data.authToken);
+      if (parsedData.authToken) {
+        localStorage.setItem("authToken", parsedData.authToken);
+        wsService.setAuthToken(parsedData.authToken);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
         });
         navigate("/");
       }
-    };
+    });
 
-    wsConnection.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to the server",
-        variant: "destructive",
-      });
-    };
+    wsService.send({
+      action: "createLoginQrCode"
+    });
 
-    setWs(wsConnection);
-
-    // Cleanup on unmount
     return () => {
-      if (wsConnection) {
-        wsConnection.close();
-      }
+      wsService.disconnect();
     };
   }, [navigate, toast]);
 
