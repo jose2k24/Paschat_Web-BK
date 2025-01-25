@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -7,38 +7,46 @@ import { wsService } from "@/services/websocket";
 interface QRCodeLoginProps {
   onPhoneLogin: () => void;
 }
-  const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
-    const [qrCodeData, setQrCodeData] = useState<string>("");
-    const navigate = useNavigate();
-    const { toast } = useToast();
 
+const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
+  const [qrCodeData, setQrCodeData] = useState<string>("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-    useEffect(() => {
-      wsService.connectToAuth();
+  useEffect(() => {
+    wsService.connect();
 
-      wsService.updateEventHandlers("auth", "response", async (data: any) => {
-        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-      
-        if (parsedData.action === "createLoginQrCode" && parsedData.qrCode) {
-          setQrCodeData(parsedData.qrCode);
-        }
-      
-        if (parsedData.action === "webQrCodeLogin" && parsedData.authToken) {
-          wsService.setAuthToken(parsedData.authToken);
-          toast({
-            title: "Login Successful",
-            description: "Welcome back!",
-          });
-          navigate("/");
-        }
-      });
+    // Request QR code on connection
+    wsService.send({
+      action: "createLoginQrCode"
+    });
 
-      return () => {
-        wsService.disconnect();
-      };
-    }, [navigate, toast]);
+    const handleAuthResponse = (data: any) => {
+      const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+    
+      if (parsedData.qrCode) {
+        setQrCodeData(parsedData.qrCode);
+      }
+    
+      if (parsedData.authToken) {
+        wsService.setAuthToken(parsedData.authToken);
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        navigate("/");
+      }
+    };
 
-    return (
+    const unsubscribe = wsService.subscribe("auth", handleAuthResponse);
+
+    return () => {
+      unsubscribe();
+      wsService.disconnect();
+    };
+  }, [navigate, toast]);
+
+  return (
     <div className="text-center space-y-8">
       <div className="space-y-4">
         <h1 className="text-3xl font-bold text-white mb-2">Log in to PasChat by QR Code</h1>
