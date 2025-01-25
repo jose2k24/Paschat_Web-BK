@@ -13,26 +13,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import countries from "world-countries";
+import { apiService } from "@/services/api";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
 }
 
-interface Country {
-  name: {
-    common: string;
-  };
-  cca2: string;
-  idd: {
-    root: string;
-    suffixes: string[];
-  };
-}
-
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   const navigate = useNavigate();
-  const [countryList, setCountryList] = useState<Country[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [countryList, setCountryList] = useState(countries);
+  const [selectedCountry, setSelectedCountry] = useState<any>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [keepSignedIn, setKeepSignedIn] = useState(false);
 
@@ -41,14 +31,13 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
       a.name.common.localeCompare(b.name.common)
     );
     setCountryList(sortedCountries);
-    // Set default country (first country in the sorted list)
     if (sortedCountries.length > 0) {
       setSelectedCountry(sortedCountries[0]);
       setPhoneNumber(getDialCode(sortedCountries[0]));
     }
   }, []);
 
-  const getDialCode = (country: Country): string => {
+  const getDialCode = (country: any): string => {
     if (country.idd.root) {
       const suffix = country.idd.suffixes?.[0] || "";
       return `${country.idd.root}${suffix}`;
@@ -56,15 +45,17 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     return "";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numberWithoutCode = phoneNumber.replace(getDialCode(selectedCountry!), "").trim();
+    const fullPhoneNumber = phoneNumber.trim();
     
-    if (numberWithoutCode === "1234567890") {
+    const response = await apiService.webLogin(fullPhoneNumber);
+    if (response.data) {
+      apiService.setAuthToken(response.data.authToken);
       toast.success("Verification code sent");
       navigate("/verify");
     } else {
-      toast.error("Please use the mock number: 1234567890");
+      toast.error("Failed to send verification code");
     }
   };
 
