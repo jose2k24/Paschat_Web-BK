@@ -7,11 +7,25 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
+interface UserAccount {
+  phone: string;
+  fullName: string | null;
+  username: string | null;
+  bio: string | null;
+  profile: string | null;
+}
+
+interface WebLoginResponse {
+  account: UserAccount;
+  authToken: string;
+}
 class ApiService {
   private static instance: ApiService;
   private authToken: string | null = null;
 
-  private constructor() {}
+  private constructor() {
+    this.authToken = localStorage.getItem("authToken");
+  }
 
   static getInstance(): ApiService {
     if (!ApiService.instance) {
@@ -22,6 +36,7 @@ class ApiService {
 
   setAuthToken(token: string) {
     this.authToken = token;
+    localStorage.setItem("authToken", token);
   }
 
   private async request<T>(
@@ -59,25 +74,79 @@ class ApiService {
   }
 
   // Auth endpoints
-  async loginWithPhone(phone: string) {
-    return this.request("/auth/user/web/login", {
+  async loginUser(phone: string) {
+    return this.request("/auth/user/login", {
       method: "POST",
       body: JSON.stringify({ phone }),
     });
   }
 
-  async loginWithQRCode(webClientId: string) {
-    return this.request("/auth/user/web/qr-code/login", {
+  async loginAdmin(email: string, password: string) {
+    return this.request("/auth/admin/login", {
       method: "POST",
-      body: JSON.stringify({ webClientId }),
+      body: JSON.stringify({ email, password }),
     });
   }
 
-  // Chat endpoints
-  async createChatRoom(user1Phone: string, user2Phone: string) {
-    return this.request("/chat/room", {
+  async setup2FA() {
+    return this.request("/auth/admin/setup/2FA", {
       method: "POST",
-      body: JSON.stringify({ user1Phone, user2Phone }),
+    });
+  }
+
+  async verifyOTP(code: string) {
+    return this.request("/auth/admin/verify/otp", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async sendOTP(email: string) {
+    return this.request(`/auth/admin/send/otp/${email}`, {
+      method: "POST",
+    });
+  }
+
+  async updateUserAccount(data: {
+    fullName?: string;
+    username?: string;
+    bio?: string;
+    profile?: string | null;
+  }) {
+    return this.request("/auth/user/account", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAdminAccount(data: {
+    username?: string;
+    fullName?: string;
+    profile?: string | null;
+  }) {
+    return this.request("/auth/admin/account", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async changePassword(oldPassword: string, newPassword: string) {
+    return this.request("/auth/admin/change-password", {
+      method: "PATCH",
+      body: JSON.stringify({ oldPassword, newPassword }),
+    });
+  }
+
+  async createAdminAccount(email: string, role: "superAdmin" | "manager" | "moderator" | "analyst") {
+    return this.request("/auth/admin/create-account", {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    });
+  }
+
+  async logout() {
+    return this.request("/auth/user/logout", {
+      method: "POST",
     });
   }
 
@@ -107,21 +176,119 @@ class ApiService {
     });
   }
 
-  // Call endpoints
-  async getCallHistory(chatId: string) {
-    return this.request(`/calls/history/${chatId}`);
+  // Chat endpoints
+  async createChatRoom(user1Phone: string, user2Phone: string) {
+    return this.request("/chat/room", {
+      method: "POST",
+      body: JSON.stringify({ user1Phone, user2Phone }),
+    });
   }
 
-  async saveCallMetadata(callData: {
-    chatId: string;
-    type: "audio" | "video";
-    duration: number;
+  async updateMessage(messageId: number, newMessage: string) {
+    return this.request("/messages", {
+      method: "PATCH",
+      body: JSON.stringify({ messageId, newMessage }),
+    });
+  }
+
+  async deleteMessage(messageId: number) {
+    return this.request("/messages", {
+      method: "DELETE",
+      body: JSON.stringify({ messageId }),
+    });
+  }
+
+  // Community endpoints
+  async createChannel(data: {
+    name: string;
+    description: string;
+    visibility: "public" | "private";
+    profile?: string;
   }) {
-    return this.request("/calls/metadata", {
+    return this.request("/community/channel", {
       method: "POST",
-      body: JSON.stringify(callData),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createGroup(data: {
+    name: string;
+    description: string;
+    visibility: "public" | "private";
+    profile?: string;
+  }) {
+    return this.request("/community/group", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateGroupPermissions(name: string, permissions: {
+    messaging: "all" | "admins";
+    mediaSharing: "all" | "admins";
+    communitySharing: "all" | "admins";
+    polls: "all" | "admins";
+    pinning: "all" | "admins";
+  }) {
+    return this.request("/community/group/permissions", {
+      method: "PATCH",
+      body: JSON.stringify({ name, ...permissions }),
+    });
+  }
+
+  async searchCommunity(keyword: string) {
+    return this.request("/community/search", {
+      method: "GET",
+      body: JSON.stringify({ keyword }),
+    });
+  }
+
+  async joinCommunity(communityId: number) {
+    return this.request(`/community/${communityId}/join`, {
+      method: "POST",
+    });
+  }
+
+  async exitCommunity(communityId: number) {
+    return this.request(`/community/${communityId}/exit`, {
+      method: "DELETE",
+    });
+  }
+
+  async updateChannelMemberRole(channelName: string, memberPhone: string, newRole: "admin" | "member") {
+    return this.request(`/community/channel/${channelName}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ memberPhone, newRole }),
+    });
+  }
+
+  async updateGroupMemberRole(groupName: string, memberPhone: string, newRole: "admin" | "member") {
+    return this.request(`/community/group/${groupName}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ memberPhone, newRole }),
+    });
+  }
+
+  async getUserCommunities() {
+    return this.request("/community/all/user");
+  }
+
+  async getCommunityDetails(communityId: number) {
+    return this.request(`/community/details/${communityId}`);
+  }
+
+  async deleteCommunity(communityId: number) {
+    return this.request("/community", {
+      method: "DELETE",
+      body: JSON.stringify({ communityId }),
+    });
+  }
+
+  async webLogin(phone: string): Promise<ApiResponse<WebLoginResponse>> {
+    return this.request("/auth/user/web/login", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
     });
   }
 }
-
 export const apiService = ApiService.getInstance();
