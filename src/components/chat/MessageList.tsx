@@ -1,5 +1,5 @@
 import { Message } from "@/types/chat";
-import { FileIcon, Check, CheckCheck } from "lucide-react";
+import { FileIcon, Check, CheckCheck, Volume2 } from "lucide-react";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { Avatar } from "../ui/avatar";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,12 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
                   controls
                   className="w-full max-w-[300px]"
                 />
+              )}
+              {msg.type === "audio" && (
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  <audio src={msg.media_url} controls className="max-w-[200px]" />
+                </div>
               )}
               {msg.type === "document" && (
                 <a

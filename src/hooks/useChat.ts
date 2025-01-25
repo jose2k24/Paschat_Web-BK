@@ -1,19 +1,6 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
-import { apiService } from "@/services/api";
-import { toast } from "sonner";
-
-export interface Message {
-  id: string;
-  content: string;
-  type: "text" | "image" | "video" | "document";
-  senderId: string;
-  recipientId: string;
-  roomId: string;
-  createdAt: string;
-  read: boolean;
-  received: boolean;
-}
+import { Message } from "@/types/chat";
 
 export const useChat = (roomId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,8 +8,8 @@ export const useChat = (roomId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleNewMessage = (data: any) => {
-      if (data.roomId === roomId) {
+    const handleNewMessage = (data: Message) => {
+      if (data.chat_id === roomId) {
         setMessages(prev => [...prev, data]);
       }
     };
@@ -44,20 +31,25 @@ export const useChat = (roomId: string) => {
     };
   }, [roomId]);
 
-  const sendMessage = async (content: string, type: Message["type"] = "text") => {
+  const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
     try {
+      const message: Partial<Message> = {
+        content,
+        type,
+        chat_id: roomId,
+        sender_id: "current_user",
+        is_edited: false,
+        created_at: new Date().toISOString(),
+        media_url: mediaUrl,
+      };
+
       wsService.send({
         action: "sendMessage",
-        data: {
-          content,
-          dataType: type,
-          createdAt: new Date().toISOString(),
-          roomId,
-        },
+        data: message,
       });
     } catch (error) {
       console.error("Failed to send message:", error);
-      toast.error("Failed to send message");
+      throw error;
     }
   };
 
