@@ -18,7 +18,6 @@ export const useChat = (roomId: string) => {
 
     const unsubscribe = wsService.subscribe("sendMessage", handleNewMessage);
 
-    // Request initial messages
     wsService.send({
       action: "getMessages",
       data: {
@@ -35,19 +34,16 @@ export const useChat = (roomId: string) => {
 
   const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
     try {
-      const message: Partial<Message> = {
-        content,
-        type,
-        chat_id: roomId,
-        sender_id: "current_user",
-        is_edited: false,
-        created_at: new Date().toISOString(),
-        media_url: mediaUrl,
-      };
-
       wsService.send({
         action: "sendMessage",
-        data: message,
+        data: {
+          content,
+          dataType: type,
+          createdAt: new Date().toISOString(),
+          roomId,
+          senderId: "current_user",
+          mediaUrl,
+        },
       });
     } catch (error) {
       console.error("Failed to send message:", error);
