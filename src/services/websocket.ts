@@ -9,6 +9,7 @@ class WebSocketService {
       response: async () => {},
     },
   };
+  private subscribers: Map<string, Set<(data: any) => void>> = new Map();
 
   constructor() {
     this.authToken = localStorage.getItem("authToken");
@@ -30,7 +31,6 @@ class WebSocketService {
 
     this.socket.on("connect", () => {
       console.log("Connected to auth websocket");
-      // Send the message immediately after connection
       this.socket?.emit("request", JSON.stringify({
         action: "createLoginQrCode"
       }));
@@ -46,6 +46,7 @@ class WebSocketService {
 
     this.socket.on("response", (data) => {
       this.eventHandlers.auth.response(data);
+      this.notifySubscribers("auth", data);
     });
   }
 
@@ -71,11 +72,26 @@ class WebSocketService {
     });
 
     this.socket.on("message", (data: any) => {
-      // Handle message events
       if (this.eventHandlers["message"]?.["response"]) {
         this.eventHandlers["message"]["response"](data);
       }
+      this.notifySubscribers("message", data);
     });
+  }
+
+  subscribe(event: string, callback: (data: any) => void) {
+    if (!this.subscribers.has(event)) {
+      this.subscribers.set(event, new Set());
+    }
+    this.subscribers.get(event)?.add(callback);
+
+    return () => {
+      this.subscribers.get(event)?.delete(callback);
+    };
+  }
+
+  private notifySubscribers(event: string, data: any) {
+    this.subscribers.get(event)?.forEach(callback => callback(data));
   }
 
   updateEventHandlers(

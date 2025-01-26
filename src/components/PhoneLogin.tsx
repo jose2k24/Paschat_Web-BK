@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import countries from "world-countries";
 import { apiService } from "@/services/api";
 import { dbService } from "@/services/db"; // Import the database service
+import { wsService } from "@/services/websocket"; // Import the websocket service
 
 interface PhoneLoginProps {
   onQRLogin: () => void;

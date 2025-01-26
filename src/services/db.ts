@@ -69,6 +69,17 @@ class DatabaseService {
       await this.saveContact(contact);
     }
   }
+
+  async updateChatRoomLastMessage(roomId: string, content: string) {
+    const room = await this.getChatRoom(roomId);
+    if (room) {
+      room.lastMessage = {
+        content,
+        timestamp: new Date().toISOString(),
+      };
+      await this.saveChatRoom(room);
+    }
+  }
 }
 
 export const dbService = new DatabaseService();
