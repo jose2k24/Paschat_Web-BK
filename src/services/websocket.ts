@@ -1,5 +1,17 @@
 import { io, Socket } from "socket.io-client";
 
+interface Message {
+  id: number;
+  type: 'text' | 'image' | 'video' | 'audio' | 'document';
+  content: string;
+  senderId: number;
+  recipientId: number;
+  roomId: number;
+  createdAt: string;
+  read: boolean;
+  received: boolean;
+}
+
 class WebSocketService {
   private socket: Socket | null = null;
   private authToken: string | null = null;
@@ -18,36 +30,6 @@ class WebSocketService {
   setAuthToken(token: string) {
     this.authToken = token;
     localStorage.setItem("authToken", token);
-  }
-
-  connectToAuth() {
-    this.socket = io("https://api.paschat.net/ws/auth", {
-      auth: this.authToken ? { token: this.authToken } : undefined,
-      transports: ['websocket'],
-      secure: true,
-      rejectUnauthorized: false,
-      withCredentials: true
-    });
-
-    this.socket.on("connect", () => {
-      console.log("Connected to auth websocket");
-      this.socket?.emit("request", JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    });
-
-    this.socket.on("disconnect", () => {
-      console.log("Disconnected from auth websocket");
-    });
-
-    this.socket.on("connect_error", (error) => {
-      console.error("Connection error:", error);
-    });
-
-    this.socket.on("response", (data) => {
-      this.eventHandlers.auth.response(data);
-      this.notifySubscribers("auth", data);
-    });
   }
 
   connect() {
@@ -77,6 +59,10 @@ class WebSocketService {
       }
       this.notifySubscribers("message", data);
     });
+
+    this.socket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+    });
   }
 
   subscribe(event: string, callback: (data: any) => void) {
@@ -94,23 +80,49 @@ class WebSocketService {
     this.subscribers.get(event)?.forEach(callback => callback(data));
   }
 
-  updateEventHandlers(
-    namespace: "auth" | "message",
-    event: "response",
-    handler: (data: any) => void
-  ) {
-    if (!this.eventHandlers[namespace]) {
-      this.eventHandlers[namespace] = {};
-    }
-    this.eventHandlers[namespace][event] = handler;
-  }
-
-  send(data: any) {
+  sendMessage(data: {
+    content: string;
+    dataType: 'text' | 'image' | 'video' | 'audio' | 'document';
+    roomId: number;
+    recipientId: number;
+  }) {
     if (!this.socket?.connected) {
       console.error("Socket not connected");
       return;
     }
-    this.socket.emit("message", data);
+    this.socket.emit("message", {
+      action: "sendMessage",
+      data: {
+        ...data,
+        createdAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  getMessages(roomId: number) {
+    if (!this.socket?.connected) {
+      console.error("Socket not connected");
+      return;
+    }
+    this.socket.emit("message", {
+      action: "getMessages",
+      data: {
+        chatRoomId: roomId,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        date: new Date().toISOString().split('T')[0],
+      },
+    });
+  }
+
+  setTypingStatus(status: 'typing' | 'recording' | 'online') {
+    if (!this.socket?.connected) {
+      console.error("Socket not connected");
+      return;
+    }
+    this.socket.emit("message", {
+      action: "setStatus",
+      data: { status },
+    });
   }
 
   disconnect() {

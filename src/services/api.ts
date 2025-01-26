@@ -151,15 +151,37 @@ class ApiService {
   }
 
   // Contacts endpoints
+  async getSavedContacts() {
+    return this.request<Array<{ phone: string; profile: string | null }>>('/contacts/save');
+  }
+
   async saveContacts(contacts: string[]) {
-    return this.request("/contacts/save", {
-      method: "POST",
+    return this.request('/contacts/save', {
+      method: 'POST',
       body: JSON.stringify({ contacts }),
     });
   }
 
-  async getSavedContacts() {
-    return this.request("/contacts/save");
+  // Chat room endpoints
+  async createChatRoom(user1Phone: string, user2Phone: string) {
+    return this.request<{
+      roomId: number;
+      createdAt: string;
+      roomType: 'private';
+      participants: Array<{ id: number; phone: string }>;
+    }>('/chat/room', {
+      method: 'POST',
+      body: JSON.stringify({ user1Phone, user2Phone }),
+    });
+  }
+
+  async getChatRooms() {
+    return this.request<Array<{
+      roomId: number;
+      roomType: string;
+      createdAt: string;
+      participants: Array<{ id: number; phone: string }>;
+    }>>('/chat/rooms');
   }
 
   // File upload endpoint
@@ -173,28 +195,6 @@ class ApiService {
         // Don't set Content-Type here, let the browser set it with the boundary
       },
       body: formData,
-    });
-  }
-
-  // Chat endpoints
-  async createChatRoom(user1Phone: string, user2Phone: string) {
-    return this.request("/chat/room", {
-      method: "POST",
-      body: JSON.stringify({ user1Phone, user2Phone }),
-    });
-  }
-
-  async updateMessage(messageId: number, newMessage: string) {
-    return this.request("/messages", {
-      method: "PATCH",
-      body: JSON.stringify({ messageId, newMessage }),
-    });
-  }
-
-  async deleteMessage(messageId: number) {
-    return this.request("/messages", {
-      method: "DELETE",
-      body: JSON.stringify({ messageId }),
     });
   }
 
