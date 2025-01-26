@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import countries from "world-countries";
 import { apiService } from "@/services/api";
+import { dbService } from "@/services/db"; // Import the database service
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
@@ -51,7 +52,19 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     
     const response = await apiService.webLogin(fullPhoneNumber);
     if (response.data) {
-      apiService.setAuthToken(response.data.authToken);
+      const { account, authToken } = response.data;
+      
+      // Set auth token for future requests
+      apiService.setAuthToken(authToken);
+      wsService.setAuthToken(authToken);
+
+      // Initialize local database
+      await dbService.init();
+
+      // Save user info
+      localStorage.setItem('userPhone', account.phone);
+      localStorage.setItem('userName', account.username || account.phone);
+      
       toast.success("Verification code sent");
       navigate("/verify");
     } else {
