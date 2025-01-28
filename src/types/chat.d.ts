@@ -45,9 +45,27 @@ export interface Chat {
   };
 }
 
-export interface CallState {
-  isActive: boolean;
-  type: "audio" | "video" | null;
-  participantId: string | null;
-  stream: MediaStream | null;
+export interface ChatMessage {
+  id: number;
+  type: "text" | "image" | "video" | "document" | "audio";
+  content: string;
+  senderId: number;
+  recipientId: number;
+  roomId: number;
+  replyTo: number | null;
+  createdAt: string;
+  read: boolean;
+  received: boolean;
+  deleteFlag: boolean;
+  callType: "audio" | "video" | null;
+}
+
+export interface ChatRoom {
+  roomId: string;
+  roomType: "private" | "group" | "channel";
+  createdAt: string;
+  participants: {
+    id: number;
+    phone: string;
+  }[];
 }

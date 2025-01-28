@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
-import { Message } from "@/types/chat";
+import { dbService } from "@/services/db";
+import { Message, ChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 
 export const useChat = (roomId: string) => {
@@ -9,28 +10,62 @@ export const useChat = (roomId: string) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    wsService.connect();
+    const initializeChat = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get messages from local DB first
+        const localMessages = await dbService.getMessagesByRoom(roomId);
+        if (localMessages.length > 0) {
+          setMessages(localMessages as Message[]);
+        }
 
-    const handleNewMessage = (data: Message) => {
-      if (data.chat_id === roomId) {
-        setMessages(prev => [...prev, data]);
+        // Connect to WebSocket
+        wsService.connect();
+
+        // Get messages from server
+        wsService.send({
+          action: "getMessages",
+          data: {
+            chatRoomId: roomId,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            date: new Date().toISOString().split('T')[0],
+          },
+        });
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Failed to initialize chat:", err);
+        setError("Failed to load messages");
+        toast.error("Failed to load messages");
+      }
+    };
+
+    initializeChat();
+
+    // Handle new messages
+    const handleNewMessage = (data: ChatMessage) => {
+      if (data.roomId.toString() === roomId) {
+        setMessages(prev => [...prev, data as unknown as Message]);
+        dbService.saveMessage(data);
       }
     };
 
     const unsubscribe = wsService.subscribe("sendMessage", handleNewMessage);
 
-    // Get messages for the room
-    wsService.send({
-      action: "getMessages",
-      data: {
-        chatRoomId: roomId,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        date: new Date().toISOString().split('T')[0],
-      },
-    });
+    // Handle received messages
+    const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
+      if (data.action === "getMessages") {
+        await dbService.saveMessages(data.messages);
+        setMessages(data.messages as unknown as Message[]);
+      }
+    };
+
+    const unsubscribeMessages = wsService.subscribe("getMessages", handleReceivedMessages);
 
     return () => {
       unsubscribe();
+      unsubscribeMessages();
     };
   }, [roomId]);
 
