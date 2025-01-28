@@ -50,24 +50,22 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullPhoneNumber = phoneNumber.trim();
-    
+  
     const response = await apiService.webLogin(fullPhoneNumber);
     if (response.data) {
       const { account, authToken } = response.data;
-      
-      // Set token once, used by both services
+  
+      // Set the token for both API and WebSocket
       apiService.setAuthToken(authToken);
-      
+  
       await dbService.init();
-
-      // Set up WebSocket with the new auth token
+  
       wsService.setAuthToken(authToken);
       wsService.connect();
-    
-      
-      localStorage.setItem('userPhone', account.phone);
-      localStorage.setItem('userName', account.username || account.phone);
-      
+  
+      localStorage.setItem("userPhone", account.phone);
+      localStorage.setItem("userName", account.username || account.phone);
+  
       toast.success("Verification code sent");
       navigate("/verify");
     }
