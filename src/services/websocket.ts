@@ -15,20 +15,22 @@ class WebSocketService {
   constructor() {
     this.authToken = localStorage.getItem("authToken");
   }
-    setAuthToken(token: string) {
-      this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
-    }
+
+  setAuthToken(token: string) {
+    this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
+  }
+
   connect() {
     if (this.socket?.connected) return;
 
-    this.socket = io("https://vps.paschat.net/ws", {
+    this.socket = io("wss://api.paschat.net/ws", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
       withCredentials: true,
       extraHeaders: {
-            "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*"
       }
     });
 
@@ -38,14 +40,15 @@ class WebSocketService {
   connectToAuth() {
     if (this.authSocket?.connected) return;
 
-    this.authSocket = io("https://vps.paschat.net/ws/auth", {
+    this.authSocket = io("wss://api.paschat.net/ws/auth", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
       withCredentials: true,
       extraHeaders: {
-            "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*"
+      }
     });
 
     this.authSocket.on("connect", () => {
