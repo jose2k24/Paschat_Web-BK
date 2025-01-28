@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-const BASE_URL = "https://vps.paschat.net/api/v1";
+const BASE_URL = "http://vps.paschat.net/api/v1";
 
 interface ApiResponse<T = any> {
   data?: T;
