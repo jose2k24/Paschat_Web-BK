@@ -27,7 +27,7 @@ class WebSocketService {
     // Remove 'Bearer ' prefix if it exists for socket.io auth
     const token = authToken?.replace('Bearer ', '');
   
-    this.socket = io("http://vps.paschat.net/ws/chat?setOnlineStatus=true", {
+    this.socket = io("https://vps.paschat.net/ws/chat?setOnlineStatus=true", {
       auth: token ? { token } : undefined,
       transports: ['websocket'],
       secure: true,
@@ -45,7 +45,7 @@ class WebSocketService {
   connectToAuth() {
     if (this.authSocket?.connected) return;
 
-    this.authSocket = io("http://vps.paschat.net/ws/auth", {
+    this.authSocket = io("https://vps.paschat.net/ws/auth", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
