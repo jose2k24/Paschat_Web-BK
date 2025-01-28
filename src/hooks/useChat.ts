@@ -14,8 +14,8 @@ export const useChat = (roomId: string) => {
     const initializeChat = async () => {
       try {
         setIsLoading(true);
-        
-        // Get messages from local DB first
+
+        // Fetch local messages from the database
         const localMessages = await dbService.getMessagesByRoom(roomId);
         if (localMessages.length > 0) {
           setMessages(localMessages);
@@ -24,15 +24,15 @@ export const useChat = (roomId: string) => {
         // Connect to WebSocket
         wsService.connect();
 
-        // Get today's messages from server
-        const today = new Date().toISOString().split('T')[0];
+        // Fetch today's messages from the server
+        const today = new Date().toISOString().split("T")[0];
         wsService.send({
           action: "getMessages",
           data: {
             chatRoomId: roomId,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            date: today
-          }
+            date: today,
+          },
         });
 
         setIsLoading(false);
@@ -45,43 +45,47 @@ export const useChat = (roomId: string) => {
 
     initializeChat();
 
-    // Handle new messages
+    // Handle new message event
     const handleNewMessage = (data: ChatMessage) => {
       if (data.roomId.toString() === roomId) {
-        setMessages(prev => [...prev, {
+        const newMessage: Message = {
           id: data.id.toString(),
           content: data.content,
           sender_id: data.senderId.toString(),
           chat_id: data.roomId.toString(),
           type: data.type,
           is_edited: false,
-          created_at: data.createdAt
-        }]);
+          created_at: data.createdAt,
+        };
+        setMessages((prev) => [...prev, newMessage]);
         dbService.saveMessage(data);
       }
     };
 
-    // Handle received messages
+    // Handle received messages event
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
       if (data.action === "getMessages") {
-        await dbService.saveMessages(data.messages);
-        const newMessages = data.messages.map(msg => ({
+        const newMessages = data.messages.map((msg) => ({
           id: msg.id.toString(),
           content: msg.content,
           sender_id: msg.senderId.toString(),
           chat_id: msg.roomId.toString(),
           type: msg.type,
           is_edited: false,
-          created_at: msg.createdAt
+          created_at: msg.createdAt,
         }));
-        setMessages(prev => [...prev, ...newMessages]);
-        setHasMore(data.messages.length > 0);
+
+        await dbService.saveMessages(data.messages); // Save to the database
+        setMessages((prev) => [...prev, ...newMessages]);
+        setHasMore(data.messages.length > 0); // Check if there are more messages to load
       }
     };
 
+    // Subscribe to WebSocket events
     const unsubscribeNew = wsService.subscribe("sendMessage", handleNewMessage);
     const unsubscribeReceived = wsService.subscribe("getMessages", handleReceivedMessages);
 
+    // Cleanup on unmount
     return () => {
       unsubscribeNew();
       unsubscribeReceived();
@@ -94,8 +98,8 @@ export const useChat = (roomId: string) => {
       data: {
         chatRoomId: roomId,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        date
-      }
+        date,
+      },
     });
   };
 
@@ -108,8 +112,8 @@ export const useChat = (roomId: string) => {
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
-          mediaUrl
-        }
+          mediaUrl,
+        },
       });
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -122,8 +126,8 @@ export const useChat = (roomId: string) => {
     wsService.send({
       action: "setStatus",
       data: {
-        status: isTyping ? "typing" : "online"
-      }
+        status: isTyping ? "typing" : "online",
+      },
     });
   };
 
@@ -134,6 +138,6 @@ export const useChat = (roomId: string) => {
     hasMore,
     sendMessage,
     setTypingStatus,
-    loadMoreMessages
+    loadMoreMessages,
   };
 };

@@ -8,6 +8,12 @@ class WebSocketService {
   private authToken: string | null = null;
 
   connect() {
+
+    const authToken = localStorage.getItem("authToken");
+    
+    // Remove 'Bearer ' prefix if it exists for socket.io auth
+    const token = authToken?.replace('Bearer ', '');
+    
     if (this.socket?.connected) return;
 
     if (!this.authToken) {
