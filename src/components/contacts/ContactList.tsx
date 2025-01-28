@@ -31,13 +31,16 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
         // Fetch contacts from API
         const response = await apiService.getSavedContacts();
         if (response.data) {
-          // Store contacts in local DB
-          await dbService.saveContacts(response.data.map(contact => ({
+          // Transform API response to match Contact interface
+          const transformedContacts: Contact[] = response.data.map(contact => ({
             phone: contact.phone,
             profile: contact.profile,
             name: null,
             roomId: null
-          })));
+          }));
+
+          // Store contacts in local DB
+          await dbService.saveContacts(transformedContacts);
 
           // Get all chat rooms
           const roomsResponse = await apiService.getChatRooms();
@@ -48,12 +51,12 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
                 roomId: room.roomId.toString(),
                 participants: room.participants,
                 createdAt: room.createdAt,
-                roomType: room.roomType
+                roomType: "private" as const // Explicitly type as "private"
               })
             ));
 
             // Update contacts with room IDs
-            const updatedContacts = await Promise.all(response.data.map(async contact => {
+            const updatedContacts = await Promise.all(transformedContacts.map(async contact => {
               const room = roomsResponse.data.find(room => 
                 room.participants.some(p => p.phone === contact.phone)
               );
@@ -99,7 +102,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
             roomId,
             participants,
             createdAt,
-            roomType: 'private'
+            roomType: "private" as const
           });
 
           // Update contact with room ID
