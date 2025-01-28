@@ -7,11 +7,15 @@ import { ChatArea } from "@/components/ChatArea";
 const Contacts = () => {
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
 
+  const handleContactSelect = (contactId: string) => {
+    setSelectedContact(contactId);
+  };
+
   return (
     <div className="flex h-screen bg-telegram-dark">
       <ChatSidebar />
       <div className="flex flex-1">
-        <ContactList onSelectContact={setSelectedContact} />
+        <ContactList onSelectContact={handleContactSelect} />
         {selectedContact ? (
           <>
             <ChatArea />

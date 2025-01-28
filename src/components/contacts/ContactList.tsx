@@ -13,7 +13,11 @@ interface Contact {
   roomId: string | null;
 }
 
-export const ContactList = () => {
+interface ContactListProps {
+  onSelectContact?: (contactId: string) => void;
+}
+
+export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -73,11 +77,11 @@ export const ContactList = () => {
             roomType: response.data.roomType
           });
           
-          // Navigate to chat
+          onSelectContact?.(contact.phone);
           navigate(`/chat/${roomId}`);
         }
       } else {
-        // Use existing room
+        onSelectContact?.(contact.phone);
         navigate(`/chat/${contact.roomId}`);
       }
     } catch (error) {
