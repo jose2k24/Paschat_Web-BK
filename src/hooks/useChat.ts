@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
 import { Message } from "@/types/chat";
+import { toast } from "sonner";
 
 export const useChat = (roomId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +19,7 @@ export const useChat = (roomId: string) => {
 
     const unsubscribe = wsService.subscribe("sendMessage", handleNewMessage);
 
+    // Get messages for the room
     wsService.send({
       action: "getMessages",
       data: {
@@ -34,6 +36,9 @@ export const useChat = (roomId: string) => {
 
   const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
     try {
+      const userPhone = localStorage.getItem('userPhone');
+      if (!userPhone) throw new Error("User not logged in");
+
       wsService.send({
         action: "sendMessage",
         data: {
@@ -41,12 +46,12 @@ export const useChat = (roomId: string) => {
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
-          senderId: "current_user",
           mediaUrl,
         },
       });
     } catch (error) {
       console.error("Failed to send message:", error);
+      toast.error("Failed to send message");
       throw error;
     }
   };

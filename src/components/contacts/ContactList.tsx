@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "@/services/api";
 import { dbService } from "@/services/db";
+import { toast } from "sonner";
 
 interface Contact {
   phone: string;
@@ -22,92 +22,110 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  // Fetch contacts on component mount
   useEffect(() => {
-    const fetchAndStoreContacts = async () => {
+    const initializeContacts = async () => {
       try {
-        // Initialize database first
+        // Initialize database
         await dbService.init();
+        
         // Fetch contacts from API
         const response = await apiService.getSavedContacts();
         if (response.data) {
-          // Transform and store contacts in local DB
-          const contactsToStore = response.data.map(contact => ({
+          // Store contacts in local DB
+          await dbService.saveContacts(response.data.map(contact => ({
             phone: contact.phone,
             profile: contact.profile,
-            name: null, // Will be updated when user sets it
-            roomId: null // Will be set when chat is initiated
-          }));
+            name: null,
+            roomId: null
+          })));
 
-          // Store in local database
-          await dbService.saveContacts(contactsToStore);
-          
-          // Get contacts from local DB to display
-          const storedContacts = await dbService.getAllContacts();
-          setContacts(storedContacts);
+          // Get all chat rooms
+          const roomsResponse = await apiService.getChatRooms();
+          if (roomsResponse.data) {
+            // Save chat rooms in local DB
+            await Promise.all(roomsResponse.data.map(room => 
+              dbService.saveChatRoom({
+                roomId: room.roomId.toString(),
+                participants: room.participants,
+                createdAt: room.createdAt,
+                roomType: room.roomType
+              })
+            ));
+
+            // Update contacts with room IDs
+            const updatedContacts = await Promise.all(response.data.map(async contact => {
+              const room = roomsResponse.data.find(room => 
+                room.participants.some(p => p.phone === contact.phone)
+              );
+              if (room) {
+                await dbService.updateContactRoomId(contact.phone, room.roomId.toString());
+                return {
+                  ...contact,
+                  roomId: room.roomId.toString()
+                };
+              }
+              return contact;
+            }));
+
+            setContacts(updatedContacts);
+          }
         }
       } catch (error) {
-        console.error("Error fetching contacts:", error);
+        console.error("Failed to initialize contacts:", error);
+        toast.error("Failed to load contacts");
       }
     };
 
-    fetchAndStoreContacts();
+    initializeContacts();
   }, []);
 
   const handleContactSelect = async (contact: Contact) => {
     try {
-      if (!contact.roomId) {
-        // Create chat room if it doesn't exist
+      let roomId = contact.roomId;
+      
+      if (!roomId) {
+        // Create new chat room
         const userPhone = localStorage.getItem('userPhone');
         if (!userPhone) throw new Error("User phone not found");
 
         const response = await apiService.createChatRoom(userPhone, contact.phone);
         
         if (response.data) {
-          const { roomId } = response.data;
+          const { roomId: newRoomId, createdAt, participants } = response.data;
+          roomId = newRoomId.toString();
           
-          // Update contact with room ID in local DB
-          await dbService.updateContactRoomId(contact.phone, roomId.toString());
-          
-          // Save chat room details
+          // Save chat room in local DB
           await dbService.saveChatRoom({
-            roomId: roomId.toString(),
-            participants: response.data.participants,
-            createdAt: response.data.createdAt,
-            roomType: response.data.roomType
+            roomId,
+            participants,
+            createdAt,
+            roomType: 'private'
           });
+
+          // Update contact with room ID
+          await dbService.updateContactRoomId(contact.phone, roomId);
           
           onSelectContact?.(contact.phone);
           navigate(`/chat/${roomId}`);
         }
       } else {
         onSelectContact?.(contact.phone);
-        navigate(`/chat/${contact.roomId}`);
+        navigate(`/chat/${roomId}`);
       }
     } catch (error) {
       console.error("Error handling contact selection:", error);
+      toast.error("Failed to start chat");
     }
   };
 
   const filteredContacts = contacts.filter(contact => 
-    contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.phone.toLowerCase().includes(searchQuery.toLowerCase())
+    contact.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (contact.name?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="w-80 border-r border-gray-800 flex flex-col">
       <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center gap-2 mb-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-            className="text-gray-400 hover:text-white"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <span className="text-white font-medium">Contacts</span>
-        </div>
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           <Input
