@@ -33,12 +33,11 @@ class ApiService {
     }
     return ApiService.instance;
   }
-
-  setAuthToken(token: string) {
-    this.authToken = token;
-    localStorage.setItem("authToken", token);
-  }
-
+    setAuthToken(token: string) {
+      const bearerToken = `Bearer ${token}`;
+      this.authToken = bearerToken;
+      localStorage.setItem("authToken", bearerToken); // Store single token with Bearer prefix
+    }
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -49,7 +48,7 @@ class ApiService {
       };
 
       if (this.authToken) {
-        headers["Authorization"] = `Bearer ${this.authToken}`;
+        headers["Authorization"] = this.authToken; // Already has Bearer prefix
       }
 
       const response = await fetch(`${BASE_URL}${endpoint}`, {

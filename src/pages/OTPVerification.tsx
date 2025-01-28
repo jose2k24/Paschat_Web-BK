@@ -8,6 +8,9 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Loader2 } from "lucide-react";
+import { apiService } from "@/services/api";
+import { wsService } from "@/services/websocket";
+
 
 const OTPVerification = () => {
   const [otp, setOtp] = useState("");
@@ -31,23 +34,28 @@ const OTPVerification = () => {
       setError("Please enter all 5 digits");
       return;
     }
-    
+  
     setIsVerifying(true);
     setError("");
 
-    // Simulate verification delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     if (otp === "12345") {
+      const authToken = localStorage.getItem('authToken');
+    
+      // Set auth token first
+      apiService.setAuthToken(authToken);
+    
+      // Then initialize websocket connection
+      wsService.setAuthToken(authToken);
+      wsService.connect();
+    
       toast.success("OTP verified successfully");
-      navigate("/");
+      navigate("/chat");
     } else {
       setError("Invalid OTP. Please try again.");
       toast.error("Invalid OTP");
     }
     setIsVerifying(false);
   };
-
   const handleResend = () => {
     if (resendTimer === 0) {
       toast.success("New OTP sent successfully");

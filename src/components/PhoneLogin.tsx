@@ -14,8 +14,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import countries from "world-countries";
 import { apiService } from "@/services/api";
-import { dbService } from "@/services/db"; // Import the database service
-import { wsService } from "@/services/websocket"; // Import the websocket service
+import { dbService } from "@/services/db";
+import { wsService } from "@/services/websocket";
 
 interface PhoneLoginProps {
   onQRLogin: () => void;
@@ -55,21 +55,16 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     if (response.data) {
       const { account, authToken } = response.data;
       
-      // Set auth token for future requests
+      // Set token once, used by both services
       apiService.setAuthToken(authToken);
-      wsService.setAuthToken(authToken);
-
-      // Initialize local database
+      
       await dbService.init();
-
-      // Save user info
+      
       localStorage.setItem('userPhone', account.phone);
       localStorage.setItem('userName', account.username || account.phone);
       
       toast.success("Verification code sent");
       navigate("/verify");
-    } else {
-      toast.error("Failed to send verification code");
     }
   };
 

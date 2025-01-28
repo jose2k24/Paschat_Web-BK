@@ -15,12 +15,9 @@ class WebSocketService {
   constructor() {
     this.authToken = localStorage.getItem("authToken");
   }
-
-  setAuthToken(token: string) {
-    this.authToken = token;
-    localStorage.setItem("authToken", token);
-  }
-
+    setAuthToken(token: string) {
+      this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
+    }
   connect() {
     if (this.socket?.connected) return;
 
@@ -29,7 +26,10 @@ class WebSocketService {
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
-      withCredentials: true
+      withCredentials: true,
+      extraHeaders: {
+            "Access-Control-Allow-Origin": "*"
+      }
     });
 
     this.setupSocketEvents(this.socket);

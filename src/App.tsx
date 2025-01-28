@@ -13,8 +13,9 @@ import Settings from "./pages/Settings";
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
-  // Check if user is authenticated
-  const isAuthenticated = !!localStorage.getItem('authToken');
+  // Check for unified auth token
+  const authToken = localStorage.getItem('authToken');
+  const isAuthenticated = !!authToken;
 
   return (
     <React.StrictMode>
@@ -24,37 +25,25 @@ const App: React.FC = () => {
           <Sonner position="bottom-center" />
           <BrowserRouter>
             <Routes>
-              {/* Redirect root based on auth status */}
+              {/* Root redirect */}
               <Route 
                 path="/" 
                 element={isAuthenticated ? <Navigate to="/chat" replace /> : <Navigate to="/login" replace />} 
               />
 
-              {/* Public routes */}
+              {/* Auth flow routes */}
               <Route 
                 path="/login" 
                 element={isAuthenticated ? <Navigate to="/chat" replace /> : <Login />} 
               />
               <Route 
                 path="/verify" 
-                element={isAuthenticated ? <Navigate to="/chat" replace /> : <OTPVerification />} 
+                element={!authToken ? <Navigate to="/login" replace /> : <OTPVerification />} 
               />
 
               {/* Protected routes */}
               <Route 
-                path="/chat" 
-                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
-              />
-              <Route 
-                path="/chat/:chatId" 
-                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
-              />
-              <Route 
-                path="/group/:groupId" 
-                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
-              />
-              <Route 
-                path="/channel/:channelId" 
+                path="/chat/*" 
                 element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
               />
               <Route 
@@ -62,19 +51,11 @@ const App: React.FC = () => {
                 element={isAuthenticated ? <Contacts /> : <Navigate to="/login" replace />} 
               />
               <Route 
-                path="/saved-messages" 
-                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
-              />
-              <Route 
                 path="/settings/*" 
                 element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} 
               />
               <Route 
-                path="/help" 
-                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
-              />
-              <Route 
-                path="/bug-report" 
+                path="/saved-messages" 
                 element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
               />
             </Routes>

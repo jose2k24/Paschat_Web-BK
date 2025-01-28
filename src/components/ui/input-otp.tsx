@@ -43,6 +43,8 @@ const InputOTPSlot = React.forwardRef<
 
   return (
     <div
+      data-is-active={isActive}
+      data-has-caret={hasFakeCaret}
       ref={ref}
       className={cn(
         "relative flex h-14 w-14 items-center justify-center rounded-lg border-2 text-sm transition-all duration-200",
@@ -50,6 +52,8 @@ const InputOTPSlot = React.forwardRef<
         "bg-white/10 border-white/20",
         className
       )}
+      data-active={isActive}
+      data-fake-caret={hasFakeCaret}
       {...props}
     >
       <div className="absolute inset-0 flex items-center justify-center">

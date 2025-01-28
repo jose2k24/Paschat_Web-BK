@@ -1,62 +1,93 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { apiService } from "@/services/api";
+import { dbService } from "@/services/db";
 
 interface Contact {
-  id: string;
-  name: string;
-  username: string;
   phone: string;
-  lastSeen: string;
-  avatar?: string;
-  online?: boolean;
+  name: string | null;
+  profile: string | null;
+  roomId: string | null;
 }
 
-const mockContacts: Contact[] = [
-  {
-    id: "1",
-    name: "José",
-    username: "eschool.et",
-    phone: "+251 91 234 5678",
-    lastSeen: "online",
-    online: true
-  },
-  {
-    id: "2",
-    name: "Muste",
-    username: "@Dech_u",
-    phone: "+251 91 067 5097",
-    lastSeen: "last seen recently"
-  },
-  {
-    id: "3",
-    name: "Yoni D",
-    username: "@yoni",
-    phone: "+251 91 234 5678",
-    lastSeen: "last seen recently"
-  },
-  {
-    id: "4",
-    name: "Byron Trokon Geply",
-    username: "@byron",
-    phone: "+251 91 234 5678",
-    lastSeen: "last seen recently"
-  }
-];
-
-interface ContactListProps {
-  onSelectContact: (contactId: string) => void;
-}
-
-export const ContactList = ({ onSelectContact }: ContactListProps) => {
+export const ContactList = () => {
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  const filteredContacts = mockContacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.username.toLowerCase().includes(searchQuery.toLowerCase())
+  // Fetch contacts on component mount
+  useEffect(() => {
+    const fetchAndStoreContacts = async () => {
+      try {
+        // Initialize database first
+        await dbService.init();
+        // Fetch contacts from API
+        const response = await apiService.getSavedContacts();
+        if (response.data) {
+          // Transform and store contacts in local DB
+          const contactsToStore = response.data.map(contact => ({
+            phone: contact.phone,
+            profile: contact.profile,
+            name: null, // Will be updated when user sets it
+            roomId: null // Will be set when chat is initiated
+          }));
+
+          // Store in local database
+          await dbService.saveContacts(contactsToStore);
+          
+          // Get contacts from local DB to display
+          const storedContacts = await dbService.getAllContacts();
+          setContacts(storedContacts);
+        }
+      } catch (error) {
+        console.error("Error fetching contacts:", error);
+      }
+    };
+
+    fetchAndStoreContacts();
+  }, []);
+
+  const handleContactSelect = async (contact: Contact) => {
+    try {
+      if (!contact.roomId) {
+        // Create chat room if it doesn't exist
+        const userPhone = localStorage.getItem('userPhone');
+        if (!userPhone) throw new Error("User phone not found");
+
+        const response = await apiService.createChatRoom(userPhone, contact.phone);
+        
+        if (response.data) {
+          const { roomId } = response.data;
+          
+          // Update contact with room ID in local DB
+          await dbService.updateContactRoomId(contact.phone, roomId.toString());
+          
+          // Save chat room details
+          await dbService.saveChatRoom({
+            roomId: roomId.toString(),
+            participants: response.data.participants,
+            createdAt: response.data.createdAt,
+            roomType: response.data.roomType
+          });
+          
+          // Navigate to chat
+          navigate(`/chat/${roomId}`);
+        }
+      } else {
+        // Use existing room
+        navigate(`/chat/${contact.roomId}`);
+      }
+    } catch (error) {
+      console.error("Error handling contact selection:", error);
+    }
+  };
+
+  const filteredContacts = contacts.filter(contact => 
+    contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.phone.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -86,34 +117,26 @@ export const ContactList = ({ onSelectContact }: ContactListProps) => {
       <div className="flex-1 overflow-y-auto">
         {filteredContacts.map((contact) => (
           <button
-            key={contact.id}
-            onClick={() => onSelectContact(contact.id)}
+            key={contact.phone}
+            onClick={() => handleContactSelect(contact)}
             className="w-full p-4 flex items-center gap-3 hover:bg-gray-800 transition-colors text-left"
           >
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
-                {contact.avatar ? (
-                  <img
-                    src={contact.avatar}
-                    alt={contact.name}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  contact.name[0]
-                )}
-              </div>
-              {contact.online && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-telegram-dark" />
+            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
+              {contact.profile ? (
+                <img
+                  src={contact.profile}
+                  alt={contact.name || contact.phone}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                (contact.name?.[0] || contact.phone[0])
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-baseline">
-                <h3 className="text-white font-medium truncate">{contact.name}</h3>
-                <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                  {contact.lastSeen}
-                </span>
-              </div>
-              <p className="text-sm text-gray-400 truncate">{contact.username}</p>
+              <h3 className="text-white font-medium truncate">
+                {contact.name || contact.phone}
+              </h3>
+              <p className="text-sm text-gray-400 truncate">{contact.phone}</p>
             </div>
           </button>
         ))}
