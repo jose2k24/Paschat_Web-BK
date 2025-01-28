@@ -5,13 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { apiService } from "@/services/api";
 import { dbService } from "@/services/db";
 import { toast } from "sonner";
-
-interface Contact {
-  phone: string;
-  name: string | null;
-  profile: string | null;
-  roomId: string | null;
-}
+import { Contact } from "@/types/chat";
 
 interface ContactListProps {
   onSelectContact?: (contactId: string) => void;
@@ -51,7 +45,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
                 roomId: room.roomId.toString(),
                 participants: room.participants,
                 createdAt: room.createdAt,
-                roomType: "private" as const // Explicitly type as "private"
+                roomType: "private"
               })
             ));
 
@@ -102,7 +96,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
             roomId,
             participants,
             createdAt,
-            roomType: "private" as const
+            roomType: "private"
           });
 
           // Update contact with room ID

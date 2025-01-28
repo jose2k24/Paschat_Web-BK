@@ -1,14 +1,10 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { ChatMessage, Message, ChatRoom, transformChatMessage } from '@/types/chat';
+import { ChatMessage, Message, ChatRoom, Contact, transformChatMessage } from '@/types/chat';
 
 interface ChatDB extends DBSchema {
   contacts: {
     key: string;
-    value: {
-      phone: string;
-      profile: string | null;
-      roomId?: string;
-    };
+    value: Contact;
   };
   chatRooms: {
     key: string;
@@ -35,7 +31,7 @@ class DatabaseService {
     });
   }
 
-  async saveContacts(contacts: Array<{ phone: string; profile: string | null }>) {
+  async saveContacts(contacts: Contact[]) {
     if (!this.db) await this.init();
     const tx = this.db!.transaction('contacts', 'readwrite');
     await Promise.all(contacts.map(contact => tx.store.put(contact)));
@@ -45,6 +41,16 @@ class DatabaseService {
   async getContacts() {
     if (!this.db) await this.init();
     return this.db!.getAll('contacts');
+  }
+
+  async getContact(phone: string) {
+    if (!this.db) await this.init();
+    return this.db!.get('contacts', phone);
+  }
+
+  async saveChatRoom(room: ChatRoom) {
+    if (!this.db) await this.init();
+    await this.db!.put('chatRooms', room);
   }
 
   async saveChatRooms(rooms: ChatRoom[]) {
