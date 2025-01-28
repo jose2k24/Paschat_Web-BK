@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-const BASE_URL = "https://vps.paschat.net/api/v1";
+const BASE_URL = "http://vps.paschat.net/api/v1";
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -33,11 +33,12 @@ class ApiService {
     }
     return ApiService.instance;
   }
-    setAuthToken(token: string) {
-      const bearerToken = `Bearer ${token}`;
-      this.authToken = bearerToken;
-      localStorage.setItem("authToken", bearerToken); // Store single token with Bearer prefix
-    }
+  setAuthToken(token: string) {
+    const bearerToken = `Bearer ${token}`;
+    this.authToken = bearerToken;
+    localStorage.setItem("authToken", bearerToken); // Store single token with Bearer prefix
+  }  
+  
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -180,7 +181,7 @@ class ApiService {
       roomType: string;
       createdAt: string;
       participants: Array<{ id: number; phone: string }>;
-    }>>('/chat/rooms');
+    }>>('/chat/room');
   }
 
   // File upload endpoint

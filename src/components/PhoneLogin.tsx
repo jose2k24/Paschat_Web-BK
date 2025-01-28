@@ -59,6 +59,11 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
       apiService.setAuthToken(authToken);
       
       await dbService.init();
+
+      // Set up WebSocket with the new auth token
+      wsService.setAuthToken(authToken);
+      wsService.connect();
+    
       
       localStorage.setItem('userPhone', account.phone);
       localStorage.setItem('userName', account.username || account.phone);

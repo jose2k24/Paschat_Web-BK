@@ -43,9 +43,9 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
             await Promise.all(roomsResponse.data.map(room => 
               dbService.saveChatRoom({
                 roomId: room.roomId.toString(),
-                participants: room.participants,
+                roomType: "private",
                 createdAt: room.createdAt,
-                roomType: "private"
+                participants: room.participants,                
               })
             ));
 

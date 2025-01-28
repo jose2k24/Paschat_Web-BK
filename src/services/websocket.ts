@@ -22,25 +22,30 @@ class WebSocketService {
 
   connect() {
     if (this.socket?.connected) return;
-
-    this.socket = io("wss://api.paschat.net/ws", {
-      auth: this.authToken ? { token: this.authToken } : undefined,
+    const authToken = localStorage.getItem("authToken");
+    
+    // Remove 'Bearer ' prefix if it exists for socket.io auth
+    const token = authToken?.replace('Bearer ', '');
+  
+    this.socket = io("http://vps.paschat.net/ws/chat?setOnlineStatus=true", {
+      auth: token ? { token } : undefined,
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
       withCredentials: true,
       extraHeaders: {
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Authorization": authToken || ''
       }
     });
-
+  
     this.setupSocketEvents(this.socket);
   }
 
   connectToAuth() {
     if (this.authSocket?.connected) return;
 
-    this.authSocket = io("wss://api.paschat.net/ws/auth", {
+    this.authSocket = io("http://vps.paschat.net/ws/auth", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
