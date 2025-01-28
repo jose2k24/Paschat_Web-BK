@@ -25,24 +25,11 @@ export interface Message {
   call_type?: "audio" | "video" | null;
 }
 
-export interface Chat {
-  id: string;
-  type: "private" | "group" | "channel";
-  name: string;
-  description?: string;
-  avatar_url?: string;
-  last_message?: Message;
-  unread_count: number;
-  members_count?: number;
-  is_admin?: boolean;
-  is_owner?: boolean;
-  permissions?: {
-    can_send_messages: boolean;
-    can_send_media: boolean;
-    can_add_members: boolean;
-    can_pin_messages: boolean;
-    can_change_info: boolean;
-  };
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: string | null;
+  stream: MediaStream | null;
 }
 
 export interface ChatMessage {
@@ -60,12 +47,16 @@ export interface ChatMessage {
   callType: "audio" | "video" | null;
 }
 
-export interface ChatRoom {
-  roomId: string;
-  roomType: "private" | "group" | "channel";
-  createdAt: string;
-  participants: {
-    id: number;
-    phone: string;
-  }[];
+// Transform function to convert ChatMessage to Message
+export function transformChatMessage(msg: ChatMessage): Message {
+  return {
+    id: msg.id.toString(),
+    content: msg.content,
+    sender_id: msg.senderId.toString(),
+    chat_id: msg.roomId.toString(),
+    type: msg.type,
+    is_edited: false,
+    created_at: msg.createdAt,
+    call_type: msg.callType
+  };
 }

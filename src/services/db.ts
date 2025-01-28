@@ -1,14 +1,13 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { ChatMessage, ChatRoom } from '@/types/chat';
+import { ChatMessage, Message, ChatRoom, transformChatMessage } from '@/types/chat';
 
-interface ChatDBSchema extends DBSchema {
+interface ChatDB extends DBSchema {
   contacts: {
     key: string;
     value: {
       phone: string;
-      name: string | null;
       profile: string | null;
-      roomId: string | null;
+      roomId?: string;
     };
   };
   chatRooms: {
@@ -16,103 +15,74 @@ interface ChatDBSchema extends DBSchema {
     value: ChatRoom;
   };
   messages: {
-    key: number;
+    key: string;
     value: ChatMessage;
     indexes: { 'by-room': string };
   };
 }
 
 class DatabaseService {
-  private db: IDBPDatabase<ChatDBSchema> | null = null;
-  private dbName = 'paschat-db';
-  private version = 1;
+  private db: IDBPDatabase<ChatDB> | null = null;
 
   async init() {
-    try {
-      this.db = await openDB<ChatDBSchema>(this.dbName, this.version, {
-        upgrade(db) {
-          if (!db.objectStoreNames.contains('contacts')) {
-            db.createObjectStore('contacts', { keyPath: 'phone' });
-          }
-          if (!db.objectStoreNames.contains('chatRooms')) {
-            db.createObjectStore('chatRooms', { keyPath: 'roomId' });
-          }
-          if (!db.objectStoreNames.contains('messages')) {
-            const messageStore = db.createObjectStore('messages', { keyPath: 'id' });
-            messageStore.createIndex('by-room', 'roomId');
-          }
-        },
-      });
-      console.log('Database initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize database:', error);
-      throw error;
-    }
+    this.db = await openDB<ChatDB>('chat-db', 1, {
+      upgrade(db) {
+        db.createObjectStore('contacts', { keyPath: 'phone' });
+        db.createObjectStore('chatRooms', { keyPath: 'roomId' });
+        const messageStore = db.createObjectStore('messages', { keyPath: 'id' });
+        messageStore.createIndex('by-room', 'roomId');
+      },
+    });
   }
 
-  // Contact methods
-  async saveContact(contact: ChatDBSchema['contacts']['value']) {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('contacts', contact);
-  }
-
-  async saveContacts(contacts: ChatDBSchema['contacts']['value'][]) {
-    if (!this.db) throw new Error('Database not initialized');
-    const tx = this.db.transaction('contacts', 'readwrite');
+  async saveContacts(contacts: Array<{ phone: string; profile: string | null }>) {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('contacts', 'readwrite');
     await Promise.all(contacts.map(contact => tx.store.put(contact)));
     await tx.done;
   }
 
-  async getContact(phone: string) {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.get('contacts', phone);
+  async getContacts() {
+    if (!this.db) await this.init();
+    return this.db!.getAll('contacts');
   }
 
-  async getAllContacts() {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAll('contacts');
-  }
-
-  // Chat room methods
-  async saveChatRoom(room: ChatRoom) {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('chatRooms', room);
-  }
-
-  async getChatRoom(roomId: string) {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.get('chatRooms', roomId);
-  }
-
-  async getAllChatRooms() {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAll('chatRooms');
-  }
-
-  // Message methods
-  async saveMessage(message: ChatMessage) {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('messages', message);
-  }
-
-  async saveMessages(messages: ChatMessage[]) {
-    if (!this.db) throw new Error('Database not initialized');
-    const tx = this.db.transaction('messages', 'readwrite');
-    await Promise.all(messages.map(message => tx.store.put(message)));
+  async saveChatRooms(rooms: ChatRoom[]) {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('chatRooms', 'readwrite');
+    await Promise.all(rooms.map(room => tx.store.put(room)));
     await tx.done;
   }
 
-  async getMessagesByRoom(roomId: string) {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAllFromIndex('messages', 'by-room', roomId);
+  async getChatRoom(roomId: string) {
+    if (!this.db) await this.init();
+    return this.db!.get('chatRooms', roomId);
+  }
+
+  async saveMessage(message: ChatMessage) {
+    if (!this.db) await this.init();
+    await this.db!.put('messages', message);
+  }
+
+  async saveMessages(messages: ChatMessage[]) {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('messages', 'readwrite');
+    await Promise.all(messages.map(msg => tx.store.put(msg)));
+    await tx.done;
+  }
+
+  async getMessagesByRoom(roomId: string): Promise<Message[]> {
+    if (!this.db) await this.init();
+    const messages = await this.db!.getAllFromIndex('messages', 'by-room', roomId);
+    return messages.map(transformChatMessage);
   }
 
   async updateContactRoomId(phone: string, roomId: string) {
-    if (!this.db) throw new Error('Database not initialized');
-    const contact = await this.getContact(phone);
+    if (!this.db) await this.init();
+    const contact = await this.db!.get('contacts', phone);
     if (contact) {
       contact.roomId = roomId;
-      await this.saveContact(contact);
+      await this.db!.put('contacts', contact);
     }
   }
 }

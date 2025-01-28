@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, ChatMessage } from "@/types/chat";
+import { Message, ChatMessage, transformChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 
 export const useChat = (roomId: string) => {
@@ -17,7 +17,7 @@ export const useChat = (roomId: string) => {
         // Get messages from local DB first
         const localMessages = await dbService.getMessagesByRoom(roomId);
         if (localMessages.length > 0) {
-          setMessages(localMessages as Message[]);
+          setMessages(localMessages);
         }
 
         // Connect to WebSocket
@@ -46,7 +46,8 @@ export const useChat = (roomId: string) => {
     // Handle new messages
     const handleNewMessage = (data: ChatMessage) => {
       if (data.roomId.toString() === roomId) {
-        setMessages(prev => [...prev, data as unknown as Message]);
+        const transformedMessage = transformChatMessage(data);
+        setMessages(prev => [...prev, transformedMessage]);
         dbService.saveMessage(data);
       }
     };
@@ -57,7 +58,8 @@ export const useChat = (roomId: string) => {
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
       if (data.action === "getMessages") {
         await dbService.saveMessages(data.messages);
-        setMessages(data.messages as unknown as Message[]);
+        const transformedMessages = data.messages.map(transformChatMessage);
+        setMessages(transformedMessages);
       }
     };
 
