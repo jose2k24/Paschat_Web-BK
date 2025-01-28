@@ -3,6 +3,7 @@ import { FileIcon, Check, CheckCheck, Volume2 } from "lucide-react";
 import { MessageContextMenu } from "./MessageContextMenu";
 import { Avatar } from "../ui/avatar";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface MessageListProps {
   messages: Message[];
@@ -42,8 +43,8 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
             )}
             <div
               className={cn(
-                "message group",
-                msg.sender_id === currentUser ? "message-sent" : "message-received",
+                "message group max-w-[70%]",
+                msg.sender_id === currentUser ? "message-sent bg-telegram-blue" : "message-received bg-telegram-message",
                 !isLastInStack(index, msg) && "mb-1"
               )}
             >
@@ -54,7 +55,7 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
                 <img
                   src={msg.media_url}
                   alt={msg.content}
-                  className="w-full max-w-[300px]"
+                  className="w-full rounded-md"
                   loading="lazy"
                 />
               )}
@@ -62,7 +63,7 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
                 <video
                   src={msg.media_url}
                   controls
-                  className="w-full max-w-[300px]"
+                  className="w-full rounded-md"
                 />
               )}
               {msg.type === "audio" && (
@@ -82,17 +83,18 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
                   <span className="truncate">{msg.content}</span>
                 </a>
               )}
-              <div className="flex items-center gap-1.5 justify-end mt-1">
+              <div className="flex items-center gap-1.5 justify-end mt-1 text-xs text-gray-300">
                 <span className="message-timestamp">
-                  {new Date(msg.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {format(new Date(msg.created_at), "HH:mm")}
                 </span>
                 {msg.sender_id === currentUser && (
                   <span className="message-status">
-                    {msg.is_edited && <span>edited</span>}
-                    <CheckCheck className="h-4 w-4" />
+                    {msg.is_edited && <span className="mr-1">edited</span>}
+                    {msg.read ? (
+                      <CheckCheck className="h-3 w-3" />
+                    ) : (
+                      <Check className="h-3 w-3" />
+                    )}
                   </span>
                 )}
               </div>

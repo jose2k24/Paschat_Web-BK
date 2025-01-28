@@ -1,100 +1,66 @@
 import { io, Socket } from "socket.io-client";
+import { toast } from "sonner";
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private authSocket: Socket | null = null;
-  private authToken: string | null = null;
-  private isConnected: boolean = false;
-  private eventHandlers: { [key: string]: { [key: string]: (data: any) => void } } = {
-    auth: {
-      response: async () => {},
-    },
-  };
   private subscribers: Map<string, Set<(data: any) => void>> = new Map();
-
-  constructor() {
-    this.authToken = localStorage.getItem("authToken");
-  }
-
-  setAuthToken(token: string) {
-    this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
-  }
 
   connect() {
     if (this.socket?.connected) return;
-    const authToken = localStorage.getItem("authToken");
     
-    // Remove 'Bearer ' prefix if it exists for socket.io auth
-    const token = authToken?.replace('Bearer ', '');
-  
-    this.socket = io("https://vps.paschat.net/ws/chat?setOnlineStatus=true", {
-      auth: token ? { token } : undefined,
-      transports: ['websocket'],
-      secure: true,
-      rejectUnauthorized: false,
-      withCredentials: true,
-      extraHeaders: {
-        "Access-Control-Allow-Origin": "*",
-        "Authorization": authToken || ''
-      }
-    });
-  
-    this.setupSocketEvents(this.socket);
-  }
-
-  connectToAuth() {
-    if (this.authSocket?.connected) return;
-
-    this.authSocket = io("https://vps.paschat.net/ws/auth", {
-      auth: this.authToken ? { token: this.authToken } : undefined,
-      transports: ['websocket'],
-      secure: true,
-      rejectUnauthorized: false,
-      withCredentials: true,
-      extraHeaders: {
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
-
-    this.authSocket.on("connect", () => {
-      console.log("Connected to auth websocket");
-      this.authSocket?.emit("request", JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    });
-
-    this.authSocket.on("response", (data) => {
-      this.eventHandlers.auth.response(data);
-    });
-
-    this.setupSocketEvents(this.authSocket);
-  }
-
-  private setupSocketEvents(socket: Socket) {
-    socket.on("connect", () => {
-      console.log("Connected to websocket");
-      this.isConnected = true;
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Disconnected from websocket");
-      this.isConnected = false;
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("Connection error:", error);
-    });
-  }
-
-  updateEventHandlers(
-    namespace: "auth",
-    event: "response",
-    handler: (data: any) => void
-  ) {
-    if (!this.eventHandlers[namespace]) {
-      this.eventHandlers[namespace] = {};
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      console.error("No auth token found");
+      return;
     }
-    this.eventHandlers[namespace][event] = handler;
+
+    // Remove 'Bearer ' prefix if it exists for socket.io auth
+    const token = authToken.replace('Bearer ', '');
+  
+    this.socket = io("https://vps.paschat.net/ws/chat", {
+      query: { setOnlineStatus: "true" },
+      auth: { token },
+      transports: ['websocket'],
+      secure: true,
+      withCredentials: true
+    });
+
+    this.setupSocketEvents();
+  }
+
+  private setupSocketEvents() {
+    if (!this.socket) return;
+
+    this.socket.on("connect", () => {
+      console.log("Connected to chat websocket");
+    });
+
+    this.socket.on("disconnect", () => {
+      console.log("Disconnected from chat websocket");
+    });
+
+    this.socket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+      toast.error("Failed to connect to chat server");
+    });
+
+    // Handle incoming messages
+    this.socket.on("response", (data) => {
+      try {
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        const subscribers = this.subscribers.get(parsedData.action);
+        if (subscribers) {
+          subscribers.forEach(callback => callback(parsedData));
+        }
+      } catch (error) {
+        console.error("Error handling socket response:", error);
+      }
+    });
+
+    this.socket.on("error", (error) => {
+      console.error("Socket error:", error);
+      toast.error(error.message || "Chat error occurred");
+    });
   }
 
   subscribe(event: string, callback: (data: any) => void) {
@@ -111,6 +77,7 @@ class WebSocketService {
   send(data: any) {
     if (!this.socket?.connected) {
       console.error("Socket not connected");
+      toast.error("Not connected to chat server");
       return;
     }
     this.socket.emit("request", JSON.stringify(data));
@@ -121,15 +88,10 @@ class WebSocketService {
       this.socket.disconnect();
       this.socket = null;
     }
-    if (this.authSocket) {
-      this.authSocket.disconnect();
-      this.authSocket = null;
-    }
-    this.isConnected = false;
   }
 
-  isSocketConnected(): boolean {
-    return this.isConnected && (this.socket?.connected || this.authSocket?.connected) || false;
+  isConnected(): boolean {
+    return this.socket?.connected || false;
   }
 }
 
