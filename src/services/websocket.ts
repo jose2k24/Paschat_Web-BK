@@ -9,7 +9,7 @@ class WebSocketService {
 
   connect() {
     if (this.socket?.connected) return;
-    
+
     if (!this.authToken) {
       console.error("No auth token found");
       return;
@@ -18,9 +18,9 @@ class WebSocketService {
     this.socket = io("https://vps.paschat.net/ws/chat", {
       query: { setOnlineStatus: "true" },
       auth: { token: this.authToken },
-      transports: ['websocket'],
+      transports: ["websocket"],
       secure: true,
-      withCredentials: true
+      withCredentials: true,
     });
 
     this.setupSocketEvents();
@@ -28,11 +28,11 @@ class WebSocketService {
 
   connectToAuth() {
     if (this.authSocket?.connected) return;
-    
+
     this.authSocket = io("https://vps.paschat.net/ws/auth", {
-      transports: ['websocket'],
+      transports: ["websocket"],
       secure: true,
-      withCredentials: true
+      withCredentials: true,
     });
 
     this.setupAuthSocketEvents();
@@ -43,6 +43,14 @@ class WebSocketService {
 
     this.authSocket.on("connect", () => {
       console.log("Connected to auth websocket");
+
+      // Emit the request after connecting
+      this.authSocket?.emit(
+        "request",
+        JSON.stringify({
+          action: "createLoginQrCode",
+        })
+      );
     });
 
     this.authSocket.on("disconnect", () => {
@@ -51,10 +59,10 @@ class WebSocketService {
 
     this.authSocket.on("response", (data) => {
       try {
-        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        const parsedData = typeof data === "string" ? JSON.parse(data) : data;
         const subscribers = this.subscribers.get("auth");
         if (subscribers) {
-          subscribers.forEach(callback => callback(parsedData));
+          subscribers.forEach((callback) => callback(parsedData));
         }
       } catch (error) {
         console.error("Error handling auth socket response:", error);
@@ -80,10 +88,10 @@ class WebSocketService {
 
     this.socket.on("response", (data) => {
       try {
-        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        const parsedData = typeof data === "string" ? JSON.parse(data) : data;
         const subscribers = this.subscribers.get(parsedData.action);
         if (subscribers) {
-          subscribers.forEach(callback => callback(parsedData));
+          subscribers.forEach((callback) => callback(parsedData));
         }
       } catch (error) {
         console.error("Error handling socket response:", error);
@@ -96,49 +104,14 @@ class WebSocketService {
     });
   }
 
-  updateEventHandlers(namespace: string, event: string, callback: (data: any) => void) {
-    const key = `${namespace}:${event}`;
-    if (!this.subscribers.has(key)) {
-      this.subscribers.set(key, new Set());
-    }
-    this.subscribers.get(key)?.add(callback);
-
-    return () => {
-      this.subscribers.get(key)?.delete(callback);
-    };
-  }
-
-  subscribe(event: string, callback: (data: any) => void) {
-    if (!this.subscribers.has(event)) {
-      this.subscribers.set(event, new Set());
-    }
-    this.subscribers.get(event)?.add(callback);
-
-    return () => {
-      this.subscribers.get(event)?.delete(callback);
-    };
-  }
-
-  send(data: any) {
-    if (!this.socket?.connected) {
-      console.error("Socket not connected");
-      toast.error("Not connected to chat server");
-      return;
-    }
-    this.socket.emit("request", JSON.stringify(data));
-  }
-
-  sendAuth(data: any) {
-    if (!this.authSocket?.connected) {
-      console.error("Auth socket not connected");
-      toast.error("Not connected to auth server");
-      return;
-    }
-    this.authSocket.emit("request", JSON.stringify(data));
-  }
-
   setAuthToken(token: string) {
     this.authToken = token;
+
+    // Automatically reconnect the socket with the new token
+    if (this.socket) {
+      this.disconnect();
+      this.connect();
+    }
   }
 
   disconnect() {
