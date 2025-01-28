@@ -21,7 +21,7 @@ class WebSocketService {
   connect() {
     if (this.socket?.connected) return;
 
-    this.socket = io("http://vps.paschat.net/ws", {
+    this.socket = io("https://vps.paschat.net/ws", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
@@ -38,12 +38,14 @@ class WebSocketService {
   connectToAuth() {
     if (this.authSocket?.connected) return;
 
-    this.authSocket = io("http://vps.paschat.net/ws/auth", {
+    this.authSocket = io("https://vps.paschat.net/ws/auth", {
       auth: this.authToken ? { token: this.authToken } : undefined,
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
-      withCredentials: true
+      withCredentials: true,
+      extraHeaders: {
+            "Access-Control-Allow-Origin": "*"
     });
 
     this.authSocket.on("connect", () => {
