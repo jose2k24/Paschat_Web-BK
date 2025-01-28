@@ -7,6 +7,7 @@ export interface Message {
   media_url?: string;
   is_edited: boolean;
   created_at: string;
+  read?: boolean;
 }
 
 export interface ChatMessage {
@@ -57,5 +58,6 @@ export const transformChatMessage = (msg: ChatMessage): Message => {
     type: msg.type,
     is_edited: false,
     created_at: msg.createdAt,
+    read: msg.read
   };
 };
