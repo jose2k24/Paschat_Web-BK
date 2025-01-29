@@ -24,14 +24,13 @@ const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
       }
     
       if (parsedData.action === "webQrCodeLogin" && parsedData.authToken) {
-        // Store the auth token
-        localStorage.setItem('authToken', `Bearer ${parsedData.authToken}`);
         wsService.setAuthToken(parsedData.authToken);
         
         // Store user info
         if (parsedData.account) {
           localStorage.setItem("userPhone", parsedData.account.phone);
           localStorage.setItem("userName", parsedData.account.username || parsedData.account.phone);
+          localStorage.setItem("authToken", `Bearer ${parsedData.authToken}`);
         }
         
         toast({
