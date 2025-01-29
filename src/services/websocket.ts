@@ -28,6 +28,17 @@ class WebSocketService {
       }
     });
 
+    this.authSocket.on("connect", () => {
+      console.log("Connected to auth websocket");
+      this.authSocket?.emit("request", JSON.stringify({
+        action: "createLoginQrCode"
+      }));
+    });
+
+    this.authSocket.on("response", (data) => {
+      this.notifySubscribers("auth", "response", data);
+    });
+
     this.setupSocketEvents(this.authSocket);
   }
 
@@ -55,11 +66,6 @@ class WebSocketService {
     socket.on("connect", () => {
       console.log("Connected to websocket");
       this.connected = true;
-      if (socket === this.authSocket) {
-        socket.emit("request", JSON.stringify({
-          action: "createLoginQrCode"
-        }));
-      }
     });
 
     socket.on("disconnect", () => {
@@ -71,12 +77,6 @@ class WebSocketService {
       console.error("Connection error:", error);
       toast.error("Connection error occurred");
     });
-
-    if (socket === this.authSocket) {
-      socket.on("response", (data) => {
-        this.notifySubscribers("auth", "response", data);
-      });
-    }
   }
 
   subscribe(namespace: string, event: string, handler: (data: any) => void) {
