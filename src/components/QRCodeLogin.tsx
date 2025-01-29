@@ -16,7 +16,7 @@ const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
   useEffect(() => {
     wsService.connectToAuth();
 
-    const unsubscribe = wsService.updateEventHandlers("auth", "response", async (data: any) => {
+    const unsubscribe = wsService.subscribe("auth", "response", async (data: any) => {
       const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
     
       if (parsedData.action === "createLoginQrCode" && parsedData.qrCode) {
