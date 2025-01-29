@@ -43,6 +43,7 @@ class WebSocketService {
 
     this.authSocket.on("connect", () => {
       console.log("Connected to auth websocket");
+      this.sendAuth({ action: "createLoginQrCode" });
     });
 
     this.authSocket.on("disconnect", () => {
@@ -113,6 +114,11 @@ class WebSocketService {
         subscribers.delete(callback);
       }
     };
+  }
+
+  updateEventHandlers(event: string, responseEvent: string, handler: (data: any) => void) {
+    const unsubscribe = this.subscribe(responseEvent, handler);
+    return unsubscribe;
   }
 
   send(data: any) {
