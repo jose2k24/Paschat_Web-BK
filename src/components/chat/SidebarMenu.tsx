@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { apiService } from "@/services/api";
+import { dbService } from "@/services/db";
+import { wsService } from "@/services/websocket";
 
 export const SidebarMenu = () => {
   const navigate = useNavigate();
@@ -30,10 +33,29 @@ export const SidebarMenu = () => {
     toast.success(`${newTheme === "dark" ? "Dark" : "Light"} mode activated`);
   };
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    toast.success("Logged out successfully");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // Clear IndexedDB
+      await dbService.init();
+      const db = await window.indexedDB.deleteDatabase('chat-db');
+      
+      // Hit logout API endpoint
+      await apiService.logout();
+      
+      // Clear auth token from localStorage
+      localStorage.removeItem('authToken');
+      
+      // Disconnect WebSocket
+      wsService.disconnect();
+      
+      // Show success message and redirect
+      toast.success("Logged out successfully");
+      navigate("/login");
+      
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Failed to logout properly");
+    }
   };
 
   const handleNavigation = (path: string) => {
