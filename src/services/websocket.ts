@@ -8,14 +8,8 @@ class WebSocketService {
   private authToken: string | null = null;
 
   connect() {
-
-    const authToken = localStorage.getItem("authToken");
-    
-    // Remove 'Bearer ' prefix if it exists for socket.io auth
-    const token = authToken?.replace('Bearer ', '');
-    
     if (this.socket?.connected) return;
-
+    
     if (!this.authToken) {
       console.error("No auth token found");
       return;
@@ -34,7 +28,7 @@ class WebSocketService {
 
   connectToAuth() {
     if (this.authSocket?.connected) return;
-
+    
     this.authSocket = io("https://vps.paschat.net/ws/auth", {
       transports: ["websocket"],
       secure: true,
@@ -49,14 +43,6 @@ class WebSocketService {
 
     this.authSocket.on("connect", () => {
       console.log("Connected to auth websocket");
-
-      // Emit the request after connecting
-      this.authSocket?.emit(
-        "request",
-        JSON.stringify({
-          action: "createLoginQrCode",
-        })
-      );
     });
 
     this.authSocket.on("disconnect", () => {
@@ -66,10 +52,7 @@ class WebSocketService {
     this.authSocket.on("response", (data) => {
       try {
         const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-        const subscribers = this.subscribers.get("auth");
-        if (subscribers) {
-          subscribers.forEach((callback) => callback(parsedData));
-        }
+        this.notifySubscribers("auth", parsedData);
       } catch (error) {
         console.error("Error handling auth socket response:", error);
       }
@@ -95,10 +78,7 @@ class WebSocketService {
     this.socket.on("response", (data) => {
       try {
         const parsedData = typeof data === "string" ? JSON.parse(data) : data;
-        const subscribers = this.subscribers.get(parsedData.action);
-        if (subscribers) {
-          subscribers.forEach((callback) => callback(parsedData));
-        }
+        this.notifySubscribers(parsedData.action, parsedData);
       } catch (error) {
         console.error("Error handling socket response:", error);
       }
@@ -110,14 +90,52 @@ class WebSocketService {
     });
   }
 
-  setAuthToken(token: string) {
-    this.authToken = token;
-
-    // Automatically reconnect the socket with the new token
-    if (this.socket) {
-      this.disconnect();
-      this.connect();
+  private notifySubscribers(event: string, data: any) {
+    const subscribers = this.subscribers.get(event);
+    if (subscribers) {
+      subscribers.forEach((callback) => callback(data));
     }
+  }
+
+  subscribe(event: string, callback: (data: any) => void) {
+    if (!this.subscribers.has(event)) {
+      this.subscribers.set(event, new Set());
+    }
+    const subscribers = this.subscribers.get(event);
+    if (subscribers) {
+      subscribers.add(callback);
+    }
+
+    // Return unsubscribe function
+    return () => {
+      const subscribers = this.subscribers.get(event);
+      if (subscribers) {
+        subscribers.delete(callback);
+      }
+    };
+  }
+
+  send(data: any) {
+    if (!this.socket?.connected) {
+      console.error("Socket not connected");
+      toast.error("Not connected to chat server");
+      return;
+    }
+    this.socket.emit("request", JSON.stringify(data));
+  }
+
+  sendAuth(data: any) {
+    if (!this.authSocket?.connected) {
+      console.error("Auth socket not connected");
+      toast.error("Not connected to auth server");
+      return;
+    }
+    this.authSocket.emit("request", JSON.stringify(data));
+  }
+
+  setAuthToken(token: string) {
+    // Remove 'Bearer ' prefix if it exists
+    this.authToken = token.replace('Bearer ', '');
   }
 
   disconnect() {
@@ -129,6 +147,8 @@ class WebSocketService {
       this.authSocket.disconnect();
       this.authSocket = null;
     }
+    // Clear all subscribers
+    this.subscribers.clear();
   }
 
   isConnected(): boolean {
