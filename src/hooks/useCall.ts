@@ -23,7 +23,7 @@ export const useCall = (chatId: string) => {
       }
     };
 
-    const unsubscribe = wsService.subscribe("incomingCall", handleIncomingCall);
+    const unsubscribe = wsService.subscribe("chat", "incomingCall", handleIncomingCall);
     return () => unsubscribe();
   }, [chatId]);
 

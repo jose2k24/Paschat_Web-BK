@@ -2,8 +2,8 @@ import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 interface EventHandlers {
-  [namespace: string]: {
-    [event: string]: (data: any) => void;
+  [key: string]: {
+    [key: string]: ((data: any) => void)[];
   };
 }
 
@@ -11,7 +11,7 @@ class WebSocketService {
   private socket: Socket | null = null;
   private authSocket: Socket | null = null;
   private authToken: string | null = null;
-  private isConnected: boolean = false;
+  private connected: boolean = false;
   private eventHandlers: EventHandlers = {};
 
   connectToAuth() {
@@ -36,9 +36,7 @@ class WebSocketService {
     });
 
     this.authSocket.on("response", (data) => {
-      if (this.eventHandlers.auth?.response) {
-        this.eventHandlers.auth.response(data);
-      }
+      this.notifySubscribers("auth", "response", data);
     });
 
     this.setupSocketEvents(this.authSocket);
@@ -66,12 +64,12 @@ class WebSocketService {
   private setupSocketEvents(socket: Socket) {
     socket.on("connect", () => {
       console.log("Connected to websocket");
-      this.isConnected = true;
+      this.connected = true;
     });
 
     socket.on("disconnect", () => {
       console.log("Disconnected from websocket");
-      this.isConnected = false;
+      this.connected = false;
     });
 
     socket.on("connect_error", (error) => {
@@ -80,22 +78,28 @@ class WebSocketService {
     });
   }
 
-  updateEventHandlers(
-    namespace: "auth",
-    event: "response",
-    handler: (data: any) => void
-  ) {
+  subscribe(namespace: string, event: string, handler: (data: any) => void) {
     if (!this.eventHandlers[namespace]) {
       this.eventHandlers[namespace] = {};
     }
-    this.eventHandlers[namespace][event] = handler;
+    if (!this.eventHandlers[namespace][event]) {
+      this.eventHandlers[namespace][event] = [];
+    }
+    this.eventHandlers[namespace][event].push(handler);
     
-    // Return unsubscribe function
     return () => {
-      if (this.eventHandlers[namespace]) {
-        delete this.eventHandlers[namespace][event];
+      const handlers = this.eventHandlers[namespace][event];
+      const index = handlers.indexOf(handler);
+      if (index > -1) {
+        handlers.splice(index, 1);
       }
     };
+  }
+
+  private notifySubscribers(namespace: string, event: string, data: any) {
+    if (this.eventHandlers[namespace]?.[event]) {
+      this.eventHandlers[namespace][event].forEach(handler => handler(data));
+    }
   }
 
   send(data: any) {
@@ -105,15 +109,6 @@ class WebSocketService {
       return;
     }
     this.socket.emit("request", JSON.stringify(data));
-  }
-
-  sendAuth(data: any) {
-    if (!this.authSocket?.connected) {
-      console.error("Auth socket not connected");
-      toast.error("Not connected to auth server");
-      return;
-    }
-    this.authSocket.emit("request", JSON.stringify(data));
   }
 
   setAuthToken(token: string) {
@@ -130,11 +125,11 @@ class WebSocketService {
       this.authSocket = null;
     }
     this.eventHandlers = {};
-    this.isConnected = false;
+    this.connected = false;
   }
 
-  isConnected(): boolean {
-    return this.socket?.connected || false;
+  isConnected() {
+    return this.connected;
   }
 }
 

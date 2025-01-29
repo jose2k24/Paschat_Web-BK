@@ -81,9 +81,9 @@ export const useChat = (roomId: string) => {
       }
     };
 
-    // Subscribe to WebSocket events
-    const unsubscribeNew = wsService.subscribe("sendMessage", handleNewMessage);
-    const unsubscribeReceived = wsService.subscribe("getMessages", handleReceivedMessages);
+    // Subscribe to WebSocket events using the new subscribe method
+    const unsubscribeNew = wsService.subscribe("chat", "sendMessage", handleNewMessage);
+    const unsubscribeReceived = wsService.subscribe("chat", "getMessages", handleReceivedMessages);
 
     // Cleanup on unmount
     return () => {

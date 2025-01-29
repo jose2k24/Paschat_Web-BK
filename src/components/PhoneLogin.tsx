@@ -21,6 +21,17 @@ interface PhoneLoginProps {
   onQRLogin: () => void;
 }
 
+interface LoginResponse {
+  account: {
+    phone: string;
+    fullName: string | null;
+    username: string | null;
+    bio: string | null;
+    profile: string | null;
+  };
+  authToken: string;
+}
+
 const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
   const navigate = useNavigate();
   const [countryList, setCountryList] = useState(countries);
@@ -52,14 +63,12 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     const fullPhoneNumber = phoneNumber.trim();
   
     const response = await apiService.loginUser(fullPhoneNumber);
-    if (response.data) {
-      const { account, authToken } = response.data;
+    if (response.data as LoginResponse) {
+      const { account, authToken } = response.data as LoginResponse;
   
       // Set the token for both API and WebSocket
       apiService.setAuthToken(authToken);
-  
       await dbService.init();
-  
       wsService.setAuthToken(authToken);
       wsService.connect();
   
