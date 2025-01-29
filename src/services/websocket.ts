@@ -104,11 +104,25 @@ class WebSocketService {
   }
 
   send(data: any) {
+    if (!this.socket) {
+      this.connect(); // Try to connect if socket doesn't exist
+    }
+    
     if (!this.socket?.connected) {
       console.error("Socket not connected");
-      return;
+      toast.error("Connection error: Please try again");
+      return Promise.reject(new Error("Socket not connected"));
     }
-    this.socket.emit("request", JSON.stringify(data));
+
+    return new Promise((resolve, reject) => {
+      try {
+        this.socket!.emit("request", JSON.stringify(data));
+        resolve(true);
+      } catch (error) {
+        console.error("Error sending message:", error);
+        reject(error);
+      }
+    });
   }
 
   setAuthToken(token: string | null) {
