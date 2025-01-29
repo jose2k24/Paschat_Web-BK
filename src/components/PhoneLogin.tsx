@@ -62,21 +62,31 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     e.preventDefault();
     const fullPhoneNumber = phoneNumber.trim();
   
-    const response = await apiService.loginUser(fullPhoneNumber);
-    if (response.data as LoginResponse) {
-      const { account, authToken } = response.data as LoginResponse;
-  
-      // Set the token for both API and WebSocket
-      apiService.setAuthToken(authToken);
-      await dbService.init();
-      wsService.setAuthToken(authToken);
-      wsService.connect();
-  
-      localStorage.setItem("userPhone", account.phone);
-      localStorage.setItem("userName", account.username || account.phone);
-  
-      toast.success("Verification code sent");
-      navigate("/verify");
+    try {
+      const response = await apiService.loginUser(fullPhoneNumber);
+      if (response.data) {
+        const { account, authToken } = response.data as LoginResponse;
+        
+        // Add Bearer prefix and store token
+        const bearerToken = `Bearer ${authToken}`;
+        localStorage.setItem("authToken", bearerToken);
+        localStorage.setItem("userPhone", account.phone);
+        localStorage.setItem("userName", account.username || account.phone);
+        
+        // Set tokens for services
+        apiService.setAuthToken(bearerToken);
+        wsService.setAuthToken(bearerToken);
+        
+        // Initialize database and connect websocket
+        await dbService.init();
+        wsService.connect();
+        
+        toast.success("Verification code sent");
+        navigate("/verify");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Failed to login. Please try again.");
     }
   };
 

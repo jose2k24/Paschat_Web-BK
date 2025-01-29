@@ -28,23 +28,13 @@ class WebSocketService {
       }
     });
 
-    this.authSocket.on("connect", () => {
-      console.log("Connected to auth websocket");
-      this.authSocket?.emit("request", JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    });
-
-    this.authSocket.on("response", (data) => {
-      this.notifySubscribers("auth", "response", data);
-    });
-
     this.setupSocketEvents(this.authSocket);
   }
 
   connect() {
     if (this.socket?.connected) return;
     
+    this.authToken = localStorage.getItem("authToken");
     if (!this.authToken) {
       console.error("No auth token found");
       return;
@@ -65,6 +55,11 @@ class WebSocketService {
     socket.on("connect", () => {
       console.log("Connected to websocket");
       this.connected = true;
+      if (socket === this.authSocket) {
+        socket.emit("request", JSON.stringify({
+          action: "createLoginQrCode"
+        }));
+      }
     });
 
     socket.on("disconnect", () => {
@@ -76,6 +71,12 @@ class WebSocketService {
       console.error("Connection error:", error);
       toast.error("Connection error occurred");
     });
+
+    if (socket === this.authSocket) {
+      socket.on("response", (data) => {
+        this.notifySubscribers("auth", "response", data);
+      });
+    }
   }
 
   subscribe(namespace: string, event: string, handler: (data: any) => void) {
@@ -105,14 +106,16 @@ class WebSocketService {
   send(data: any) {
     if (!this.socket?.connected) {
       console.error("Socket not connected");
-      toast.error("Not connected to chat server");
       return;
     }
     this.socket.emit("request", JSON.stringify(data));
   }
 
-  setAuthToken(token: string) {
-    this.authToken = token.replace('Bearer ', '');
+  setAuthToken(token: string | null) {
+    this.authToken = token;
+    if (token) {
+      localStorage.setItem("authToken", token);
+    }
   }
 
   disconnect() {
@@ -126,6 +129,7 @@ class WebSocketService {
     }
     this.eventHandlers = {};
     this.connected = false;
+    this.authToken = null;
   }
 
   isConnected() {

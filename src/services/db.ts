@@ -31,6 +31,17 @@ class DatabaseService {
     });
   }
 
+  async clearAll() {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction(['contacts', 'chatRooms', 'messages'], 'readwrite');
+    await Promise.all([
+      tx.objectStore('contacts').clear(),
+      tx.objectStore('chatRooms').clear(),
+      tx.objectStore('messages').clear(),
+    ]);
+    await tx.done;
+  }
+
   async saveContacts(contacts: Contact[]) {
     if (!this.db) await this.init();
     const tx = this.db!.transaction('contacts', 'readwrite');
