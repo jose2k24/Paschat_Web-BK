@@ -51,7 +51,7 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
     e.preventDefault();
     const fullPhoneNumber = phoneNumber.trim();
   
-    const response = await apiService.webLogin(fullPhoneNumber);
+    const response = await apiService.loginUser(fullPhoneNumber);
     if (response.data) {
       const { account, authToken } = response.data;
   
