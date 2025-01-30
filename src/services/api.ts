@@ -49,7 +49,7 @@ class ApiService {
       };
 
       if (this.authToken) {
-        headers["Authorization"] = this.authToken; // Already has Bearer prefix
+        headers["Authorization"] = this.authToken; // Uses token with Bearer prefix
       }
 
       const response = await fetch(`${BASE_URL}${endpoint}`, {
