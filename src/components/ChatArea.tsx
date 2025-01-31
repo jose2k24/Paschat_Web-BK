@@ -11,9 +11,9 @@ import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
 export const ChatArea = () => {
   const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
-    chatId?: number;
-    groupId?: number;
-    channelId?: number;
+    chatId?: string;
+    groupId?: string;
+    channelId?: string;
   }>();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
