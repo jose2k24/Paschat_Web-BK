@@ -10,7 +10,11 @@ import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
 export const ChatArea = () => {
-  const { chatId = "0", groupId = "0", channelId = "0" } = useParams();
+  const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
+    chatId?: string;
+    groupId?: string;
+    channelId?: string;
+  }>();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -103,14 +107,12 @@ export const ChatArea = () => {
     return <div className="flex-1 flex items-center justify-center">Loading...</div>;
   }
 
-  const displayId = chatId || groupId || channelId || "0";
-
   return (
     <div className="flex-1 flex h-full">
       <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={displayId}
+          title={chatId || groupId || channelId || "0"}
           subtitle={isTyping ? "typing..." : ""}
         />
         <MessageList 
@@ -135,13 +137,13 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          userName={displayId}
+          userName={chatId || groupId || channelId || "0"}
         />
       </div>
       {groupId && (
         <GroupProfileSidebar 
           group={{ 
-            id: parseInt(groupId, 10), 
+            id: parseInt(groupId), 
             name: "", 
             membersCount: 0, 
             isAdmin: false 
@@ -151,7 +153,7 @@ export const ChatArea = () => {
       {channelId && (
         <ChannelProfileSidebar 
           channel={{ 
-            id: parseInt(channelId, 10), 
+            id: parseInt(channelId), 
             name: "", 
             subscribersCount: 0, 
             isOwner: false 
