@@ -10,11 +10,7 @@ import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
 export const ChatArea = () => {
-  const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
-    chatId?: string;
-    groupId?: string;
-    channelId?: string;
-  }>();
+  const { chatId = "", groupId, channelId } = useParams();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -27,9 +23,9 @@ export const ChatArea = () => {
     error,
     sendMessage,
     setTypingStatus,
-  } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
+  } = useChat(chatId || groupId || channelId || "");
 
-  const currentUser = parseInt(localStorage.getItem("userPhone") || "0", 10);
+  const currentUser = localStorage.getItem("userPhone");
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -112,7 +108,7 @@ export const ChatArea = () => {
       <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={chatId || groupId || channelId || "0"}
+          title={chatId || groupId || channelId || ""}
           subtitle={isTyping ? "typing..." : ""}
         />
         <MessageList 
@@ -137,29 +133,11 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          userName={chatId || groupId || channelId || "0"}
+          userName={chatId || groupId || channelId || ""}
         />
       </div>
-      {groupId && (
-        <GroupProfileSidebar 
-          group={{ 
-            id: groupId, 
-            name: "", 
-            membersCount: 0, 
-            isAdmin: false 
-          }} 
-        />
-      )}
-      {channelId && (
-        <ChannelProfileSidebar 
-          channel={{ 
-            id: channelId, 
-            name: "", 
-            subscribersCount: 0, 
-            isOwner: false 
-          }} 
-        />
-      )}
+      {groupId && <GroupProfileSidebar group={{ id: groupId, name: "", membersCount: 0, isAdmin: false }} />}
+      {channelId && <ChannelProfileSidebar channel={{ id: channelId, name: "", subscribersCount: 0, isOwner: false }} />}
     </div>
   );
 };

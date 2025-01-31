@@ -7,13 +7,13 @@ interface ChatDB extends DBSchema {
     value: Contact;
   };
   chatRooms: {
-    key: number;
+    key: string;
     value: ChatRoom;
   };
   messages: {
-    key: number;
+    key: string;
     value: ChatMessage;
-    indexes: { 'by-room': number };
+    indexes: { 'by-room': string };
   };
 }
 
@@ -71,7 +71,7 @@ class DatabaseService {
     await tx.done;
   }
 
-  async getChatRoom(roomId: number) {
+  async getChatRoom(roomId: string) {
     if (!this.db) await this.init();
     return this.db!.get('chatRooms', roomId);
   }
@@ -88,13 +88,13 @@ class DatabaseService {
     await tx.done;
   }
 
-  async getMessagesByRoom(roomId: number): Promise<Message[]> {
+  async getMessagesByRoom(roomId: string): Promise<Message[]> {
     if (!this.db) await this.init();
     const messages = await this.db!.getAllFromIndex('messages', 'by-room', roomId);
     return messages.map(transformChatMessage);
   }
 
-  async updateContactRoomId(phone: string, roomId: number) {
+  async updateContactRoomId(phone: string, roomId: string) {
     if (!this.db) await this.init();
     const contact = await this.db!.get('contacts', phone);
     if (contact) {

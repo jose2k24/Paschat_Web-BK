@@ -5,9 +5,9 @@ import { ContactList } from "@/components/contacts/ContactList";
 import { ChatArea } from "@/components/ChatArea";
 
 const Contacts = () => {
-  const [selectedContact, setSelectedContact] = useState<number | null>(null);
+  const [selectedContact, setSelectedContact] = useState<string | null>(null);
 
-  const handleContactSelect = (contactId: number) => {
+  const handleContactSelect = (contactId: string) => {
     setSelectedContact(contactId);
   };
 
@@ -19,7 +19,7 @@ const Contacts = () => {
         {selectedContact ? (
           <>
             <ChatArea />
-            <ContactInfo contactId={String(selectedContact)} />
+            <ContactInfo contactId={selectedContact} />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-white/50">

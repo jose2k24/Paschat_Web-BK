@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Contact } from "@/types/chat";
 
 interface ContactListProps {
-  onSelectContact?: (contactId: number) => void;
+  onSelectContact?: (contactId: string) => void;
 }
 
 export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => {
@@ -19,9 +19,13 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
   useEffect(() => {
     const initializeContacts = async () => {
       try {
+        // Initialize database
         await dbService.init();
+        
+        // Fetch contacts from API
         const response = await apiService.getSavedContacts();
         if (response.data) {
+          // Transform API response to match Contact interface
           const transformedContacts: Contact[] = response.data.map(contact => ({
             phone: contact.phone,
             profile: contact.profile,
@@ -29,29 +33,32 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
             roomId: null
           }));
 
+          // Store contacts in local DB
           await dbService.saveContacts(transformedContacts);
 
+          // Get all chat rooms
           const roomsResponse = await apiService.getChatRooms();
           if (roomsResponse.data) {
+            // Save chat rooms in local DB
             await Promise.all(roomsResponse.data.map(room => 
               dbService.saveChatRoom({
-                roomId: parseInt(room.roomId.toString(), 10),
+                roomId: room.roomId.toString(),
                 roomType: "private",
                 createdAt: room.createdAt,
                 participants: room.participants,                
               })
             ));
 
+            // Update contacts with room IDs
             const updatedContacts = await Promise.all(transformedContacts.map(async contact => {
               const room = roomsResponse.data.find(room => 
                 room.participants.some(p => p.phone === contact.phone)
               );
               if (room) {
-                const roomId = parseInt(room.roomId.toString(), 10);
-                await dbService.updateContactRoomId(contact.phone, roomId);
+                await dbService.updateContactRoomId(contact.phone, room.roomId.toString());
                 return {
                   ...contact,
-                  roomId
+                  roomId: room.roomId.toString()
                 };
               }
               return contact;
@@ -74,6 +81,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
       let roomId = contact.roomId;
       
       if (!roomId) {
+        // Create new chat room
         const userPhone = localStorage.getItem('userPhone');
         if (!userPhone) throw new Error("User phone not found");
 
@@ -81,8 +89,9 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
         
         if (response.data) {
           const { roomId: newRoomId, createdAt, participants } = response.data;
-          roomId = parseInt(newRoomId.toString(), 10);
+          roomId = newRoomId.toString();
           
+          // Save chat room in local DB
           await dbService.saveChatRoom({
             roomId,
             participants,
@@ -90,13 +99,14 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
             roomType: "private"
           });
 
+          // Update contact with room ID
           await dbService.updateContactRoomId(contact.phone, roomId);
           
-          onSelectContact?.(parseInt(contact.phone, 10));
+          onSelectContact?.(contact.phone);
           navigate(`/chat/${roomId}`);
         }
       } else {
-        onSelectContact?.(parseInt(contact.phone, 10));
+        onSelectContact?.(contact.phone);
         navigate(`/chat/${roomId}`);
       }
     } catch (error) {

@@ -5,11 +5,11 @@ import { Message, ChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-export const useChat = (contactId: number) => {
+export const useChat = (contactId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [roomId, setRoomId] = useState<number | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -18,7 +18,7 @@ export const useChat = (contactId: number) => {
         await dbService.init();
 
         // Get contact details including roomId
-        const contact = await dbService.getContact(contactId.toString());
+        const contact = await dbService.getContact(contactId);
         if (!contact) {
           throw new Error("Contact not found");
         }
@@ -32,7 +32,7 @@ export const useChat = (contactId: number) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `${localStorage.getItem('authToken')}`
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             },
             body: JSON.stringify({
               user1Phone: userPhone,
@@ -43,7 +43,7 @@ export const useChat = (contactId: number) => {
           if (!response.ok) throw new Error("Failed to create chat room");
           
           const data = await response.json();
-          contact.roomId = data.roomId;
+          contact.roomId = data.roomId.toString();
           await dbService.updateContactRoomId(contact.phone, contact.roomId);
         }
 
@@ -83,12 +83,12 @@ export const useChat = (contactId: number) => {
 
     // Handle new message event
     const handleNewMessage = async (data: ChatMessage) => {
-      if (data.roomId === roomId) {
+      if (data.roomId.toString() === roomId) {
         const newMessage: Message = {
-          id: data.id,
+          id: data.id.toString(),
           content: data.content,
-          sender_id: data.senderId,
-          chat_id: data.roomId,
+          sender_id: data.senderId.toString(),
+          chat_id: data.roomId.toString(),
           type: data.type,
           is_edited: false,
           created_at: data.createdAt,
@@ -102,10 +102,10 @@ export const useChat = (contactId: number) => {
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
       if (data.action === "getMessages" && data.messages) {
         const newMessages = data.messages.map(msg => ({
-          id: msg.id,
+          id: msg.id.toString(),
           content: msg.content,
-          sender_id: msg.senderId,
-          chat_id: msg.roomId,
+          sender_id: msg.senderId.toString(),
+          chat_id: msg.roomId.toString(),
           type: msg.type,
           is_edited: false,
           created_at: msg.createdAt,
@@ -138,7 +138,7 @@ export const useChat = (contactId: number) => {
           content,
           dataType: type,
           createdAt: new Date().toISOString(),
-          roomId,
+          roomId: parseInt(roomId),
           mediaUrl,
         },
       });
