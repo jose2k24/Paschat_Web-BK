@@ -7,6 +7,7 @@ export interface Message {
   media_url?: string;
   is_edited: boolean;
   created_at: string;
+  read?: boolean;
   reactions?: {
     type: string;
     count: number;
@@ -47,6 +48,23 @@ export interface ChatMessage {
   callType: "audio" | "video" | null;
 }
 
+export interface ChatRoom {
+  roomId: number;
+  roomType: "private" | "group" | "channel";
+  createdAt: string;
+  participants: Array<{
+    id: number;
+    phone: string;
+  }>;
+}
+
+export interface Contact {
+  phone: string;
+  name: string | null;
+  profile: string | null;
+  roomId: number | null;
+}
+
 export function transformChatMessage(msg: ChatMessage): Message {
   return {
     id: msg.id,
@@ -56,6 +74,7 @@ export function transformChatMessage(msg: ChatMessage): Message {
     type: msg.type,
     is_edited: false,
     created_at: msg.createdAt,
+    read: msg.read,
     call_type: msg.callType
   };
 }
