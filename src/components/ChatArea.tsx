@@ -103,12 +103,14 @@ export const ChatArea = () => {
     return <div className="flex-1 flex items-center justify-center">Loading...</div>;
   }
 
+  const displayId = chatId || groupId || channelId || "0";
+
   return (
     <div className="flex-1 flex h-full">
       <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={String(chatId || groupId || channelId || "")}
+          title={displayId}
           subtitle={isTyping ? "typing..." : ""}
         />
         <MessageList 
@@ -133,7 +135,7 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          userName={String(chatId || groupId || channelId || "")}
+          userName={displayId}
         />
       </div>
       {groupId && (

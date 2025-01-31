@@ -19,7 +19,7 @@ const Contacts = () => {
         {selectedContact ? (
           <>
             <ChatArea />
-            <ContactInfo contactId={selectedContact} />
+            <ContactInfo contactId={String(selectedContact)} />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-white/50">

@@ -7,7 +7,29 @@ export interface Message {
   media_url?: string;
   is_edited: boolean;
   created_at: string;
-  read?: boolean;
+  reactions?: {
+    type: string;
+    count: number;
+    reacted_by: number[];
+  }[];
+  reply_to?: {
+    message_id: number;
+    content: string;
+    sender_id: number;
+  };
+  forwarded_from?: {
+    chat_id: number;
+    message_id: number;
+    sender_name: string;
+  };
+  call_type?: "audio" | "video" | null;
+}
+
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: number | null;
+  stream: MediaStream | null;
 }
 
 export interface ChatMessage {
@@ -25,24 +47,7 @@ export interface ChatMessage {
   callType: "audio" | "video" | null;
 }
 
-export interface ChatRoom {
-  roomId: number;
-  roomType: "private" | "group" | "channel";
-  createdAt: string;
-  participants: Array<{
-    id: number;
-    phone: string;
-  }>;
-}
-
-export interface Contact {
-  phone: string;
-  name: string | null;
-  profile: string | null;
-  roomId: number | null;
-}
-
-export const transformChatMessage = (msg: ChatMessage): Message => {
+export function transformChatMessage(msg: ChatMessage): Message {
   return {
     id: msg.id,
     content: msg.content,
@@ -51,6 +56,6 @@ export const transformChatMessage = (msg: ChatMessage): Message => {
     type: msg.type,
     is_edited: false,
     created_at: msg.createdAt,
-    read: msg.read
+    call_type: msg.callType
   };
-};
+}
