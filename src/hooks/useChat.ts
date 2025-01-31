@@ -3,33 +3,66 @@ import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
 import { Message, ChatMessage } from "@/types/chat";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
-export const useChat = (roomId: string) => {
+export const useChat = (contactId: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeChat = async () => {
       try {
         setIsLoading(true);
+        await dbService.init();
 
-        // Fetch local messages from the database
-        const localMessages = await dbService.getMessagesByRoom(roomId);
+        // Get contact details including roomId
+        const contact = await dbService.getContact(contactId);
+        if (!contact) {
+          throw new Error("Contact not found");
+        }
+
+        // If contact has no roomId, create a new chat room
+        if (!contact.roomId) {
+          const userPhone = localStorage.getItem('userPhone');
+          if (!userPhone) throw new Error("User phone not found");
+
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/room`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({
+              user1Phone: userPhone,
+              user2Phone: contact.phone
+            })
+          });
+
+          if (!response.ok) throw new Error("Failed to create chat room");
+          
+          const data = await response.json();
+          contact.roomId = data.roomId.toString();
+          await dbService.updateContactRoomId(contact.phone, contact.roomId);
+        }
+
+        setRoomId(contact.roomId);
+
+        // Fetch messages for the room
+        const localMessages = await dbService.getMessagesByRoom(contact.roomId);
         if (localMessages.length > 0) {
           setMessages(localMessages);
         }
 
-        // Connect to WebSocket
+        // Connect to WebSocket and fetch today's messages
         wsService.connect();
-
-        // Fetch today's messages from the server
-        const today = new Date().toISOString().split("T")[0];
-        wsService.send({
+        const today = format(new Date(), 'yyyy-MM-dd');
+        
+        await wsService.send({
           action: "getMessages",
           data: {
-            chatRoomId: roomId,
+            chatRoomId: contact.roomId,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             date: today,
           },
@@ -40,13 +73,16 @@ export const useChat = (roomId: string) => {
         console.error("Failed to initialize chat:", err);
         setError("Failed to load messages");
         toast.error("Failed to load messages");
+        setIsLoading(false);
       }
     };
 
-    initializeChat();
+    if (contactId) {
+      initializeChat();
+    }
 
     // Handle new message event
-    const handleNewMessage = (data: ChatMessage) => {
+    const handleNewMessage = async (data: ChatMessage) => {
       if (data.roomId.toString() === roomId) {
         const newMessage: Message = {
           id: data.id.toString(),
@@ -57,15 +93,15 @@ export const useChat = (roomId: string) => {
           is_edited: false,
           created_at: data.createdAt,
         };
-        setMessages((prev) => [...prev, newMessage]);
-        dbService.saveMessage(data);
+        setMessages(prev => [...prev, newMessage]);
+        await dbService.saveMessage(data);
       }
     };
 
     // Handle received messages event
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
-      if (data.action === "getMessages") {
-        const newMessages = data.messages.map((msg) => ({
+      if (data.action === "getMessages" && data.messages) {
+        const newMessages = data.messages.map(msg => ({
           id: msg.id.toString(),
           content: msg.content,
           sender_id: msg.senderId.toString(),
@@ -75,43 +111,34 @@ export const useChat = (roomId: string) => {
           created_at: msg.createdAt,
         }));
 
-        await dbService.saveMessages(data.messages); // Save to the database
-        setMessages((prev) => [...prev, ...newMessages]);
-        setHasMore(data.messages.length > 0); // Check if there are more messages to load
+        await dbService.saveMessages(data.messages);
+        setMessages(prev => [...prev, ...newMessages]);
       }
     };
 
-    // Subscribe to WebSocket events using the new subscribe method
     const unsubscribeNew = wsService.subscribe("chat", "sendMessage", handleNewMessage);
     const unsubscribeReceived = wsService.subscribe("chat", "getMessages", handleReceivedMessages);
 
-    // Cleanup on unmount
     return () => {
       unsubscribeNew();
       unsubscribeReceived();
     };
-  }, [roomId]);
-
-  const loadMoreMessages = async (date: string) => {
-    wsService.send({
-      action: "getMessages",
-      data: {
-        chatRoomId: roomId,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        date,
-      },
-    });
-  };
+  }, [contactId, roomId]);
 
   const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
+    if (!roomId) {
+      toast.error("Chat room not initialized");
+      return;
+    }
+
     try {
-      wsService.send({
+      await wsService.send({
         action: "sendMessage",
         data: {
           content,
           dataType: type,
           createdAt: new Date().toISOString(),
-          roomId,
+          roomId: parseInt(roomId),
           mediaUrl,
         },
       });
@@ -135,9 +162,8 @@ export const useChat = (roomId: string) => {
     messages,
     isLoading,
     error,
-    hasMore,
     sendMessage,
     setTypingStatus,
-    loadMoreMessages,
+    roomId,
   };
 };
