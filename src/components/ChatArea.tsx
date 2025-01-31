@@ -11,9 +11,9 @@ import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
 export const ChatArea = () => {
   const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
-    chatId?: string;
-    groupId?: string;
-    channelId?: string;
+    chatId?: number;
+    groupId?: number;
+    channelId?: number;
   }>();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
@@ -143,7 +143,7 @@ export const ChatArea = () => {
       {groupId && (
         <GroupProfileSidebar 
           group={{ 
-            id: parseInt(groupId), 
+            id: groupId, 
             name: "", 
             membersCount: 0, 
             isAdmin: false 
@@ -153,7 +153,7 @@ export const ChatArea = () => {
       {channelId && (
         <ChannelProfileSidebar 
           channel={{ 
-            id: parseInt(channelId), 
+            id: channelId, 
             name: "", 
             subscribersCount: 0, 
             isOwner: false 
