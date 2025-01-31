@@ -23,9 +23,9 @@ export const ChatArea = () => {
     error,
     sendMessage,
     setTypingStatus,
-  } = useChat(chatId || groupId || channelId || "");
+  } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
 
-  const currentUser = localStorage.getItem("userPhone");
+  const currentUser = parseInt(localStorage.getItem("userPhone") || "0", 10);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -136,8 +136,8 @@ export const ChatArea = () => {
           userName={chatId || groupId || channelId || ""}
         />
       </div>
-      {groupId && <GroupProfileSidebar group={{ id: groupId, name: "", membersCount: 0, isAdmin: false }} />}
-      {channelId && <ChannelProfileSidebar channel={{ id: channelId, name: "", subscribersCount: 0, isOwner: false }} />}
+      {groupId && <GroupProfileSidebar group={{ id: parseInt(groupId, 10), name: "", membersCount: 0, isAdmin: false }} />}
+      {channelId && <ChannelProfileSidebar channel={{ id: parseInt(channelId, 10), name: "", subscribersCount: 0, isOwner: false }} />}
     </div>
   );
 };

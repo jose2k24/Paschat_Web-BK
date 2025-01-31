@@ -47,7 +47,6 @@ export interface ChatMessage {
   callType: "audio" | "video" | null;
 }
 
-// Transform function to convert ChatMessage to Message
 export function transformChatMessage(msg: ChatMessage): Message {
   return {
     id: msg.id,

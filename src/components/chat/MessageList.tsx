@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 interface MessageListProps {
   messages: Message[];
-  currentUser: string | null;
+  currentUser: number;
   isTyping?: boolean;
 }
 
