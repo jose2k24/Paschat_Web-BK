@@ -10,7 +10,7 @@ import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
 export const ChatArea = () => {
-  const { chatId = "", groupId, channelId } = useParams();
+  const { chatId = "0", groupId = "0", channelId = "0" } = useParams();
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -108,7 +108,7 @@ export const ChatArea = () => {
       <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={chatId || groupId || channelId || ""}
+          title={String(chatId || groupId || channelId || "")}
           subtitle={isTyping ? "typing..." : ""}
         />
         <MessageList 
@@ -133,7 +133,7 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          userName={chatId || groupId || channelId || ""}
+          userName={String(chatId || groupId || channelId || "")}
         />
       </div>
       {groupId && (

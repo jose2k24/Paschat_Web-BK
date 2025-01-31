@@ -50,18 +50,18 @@ export const useContacts = () => {
       const response = await apiService.createChatRoom(userPhone, contactPhone);
       
       if (response.data) {
-        const { roomId, createdAt, participants } = response.data;
+        const roomId = parseInt(response.data.roomId.toString(), 10);
         
         await dbService.saveChatRoom({
-          roomId: roomId.toString(),
-          participants,
-          createdAt,
+          roomId,
+          participants: response.data.participants,
+          createdAt: response.data.createdAt,
           roomType: 'private'
         });
 
-        await dbService.updateContactRoomId(contactPhone, roomId.toString());
+        await dbService.updateContactRoomId(contactPhone, roomId);
         
-        return roomId.toString();
+        return roomId;
       }
       
       throw new Error('Failed to create chat room');
