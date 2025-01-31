@@ -1,8 +1,8 @@
 export interface Message {
-  id: string;
+  id: number;
   content: string;
-  sender_id: string;
-  chat_id: string;
+  sender_id: number;
+  chat_id: number;
   type: "text" | "image" | "video" | "document" | "audio";
   media_url?: string;
   is_edited: boolean;
@@ -10,16 +10,16 @@ export interface Message {
   reactions?: {
     type: string;
     count: number;
-    reacted_by: string[];
+    reacted_by: number[];
   }[];
   reply_to?: {
-    message_id: string;
+    message_id: number;
     content: string;
-    sender_id: string;
+    sender_id: number;
   };
   forwarded_from?: {
-    chat_id: string;
-    message_id: string;
+    chat_id: number;
+    message_id: number;
     sender_name: string;
   };
   call_type?: "audio" | "video" | null;
@@ -28,7 +28,7 @@ export interface Message {
 export interface CallState {
   isActive: boolean;
   type: "audio" | "video" | null;
-  participantId: string | null;
+  participantId: number | null;
   stream: MediaStream | null;
 }
 
@@ -50,10 +50,10 @@ export interface ChatMessage {
 // Transform function to convert ChatMessage to Message
 export function transformChatMessage(msg: ChatMessage): Message {
   return {
-    id: msg.id.toString(),
+    id: msg.id,
     content: msg.content,
-    sender_id: msg.senderId.toString(),
-    chat_id: msg.roomId.toString(),
+    sender_id: msg.senderId,
+    chat_id: msg.roomId,
     type: msg.type,
     is_edited: false,
     created_at: msg.createdAt,

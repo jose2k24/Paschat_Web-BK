@@ -1,8 +1,8 @@
 export interface Message {
-  id: string;
+  id: number;
   content: string;
-  sender_id: string;
-  chat_id: string;
+  sender_id: number;
+  chat_id: number;
   type: "text" | "image" | "video" | "document" | "audio";
   media_url?: string;
   is_edited: boolean;
@@ -26,7 +26,7 @@ export interface ChatMessage {
 }
 
 export interface ChatRoom {
-  roomId: string;
+  roomId: number;
   roomType: "private" | "group" | "channel";
   createdAt: string;
   participants: Array<{
@@ -39,15 +39,15 @@ export interface Contact {
   phone: string;
   name: string | null;
   profile: string | null;
-  roomId: string | null;
+  roomId: number | null;
 }
 
 export const transformChatMessage = (msg: ChatMessage): Message => {
   return {
-    id: msg.id.toString(),
+    id: msg.id,
     content: msg.content,
-    sender_id: msg.senderId.toString(),
-    chat_id: msg.roomId.toString(),
+    sender_id: msg.senderId,
+    chat_id: msg.roomId,
     type: msg.type,
     is_edited: false,
     created_at: msg.createdAt,
