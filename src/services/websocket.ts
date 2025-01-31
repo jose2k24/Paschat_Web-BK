@@ -17,8 +17,11 @@ class WebSocketService {
   connectToAuth() {
     if (this.authSocket?.connected) return;
 
+    // Use token without Bearer prefix for WebSocket
+    const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
+
     this.authSocket = io("https://vps.paschat.net/ws/auth", {
-      auth: this.authToken ? { token: this.authToken } : undefined,
+      auth: token ? { token } : undefined,
       transports: ['websocket'],
       secure: true,
       rejectUnauthorized: false,
@@ -45,15 +48,16 @@ class WebSocketService {
   connect() {
     if (this.socket?.connected) return;
     
-    this.authToken = localStorage.getItem("authToken");
-    if (!this.authToken) {
+    // Use token without Bearer prefix for WebSocket
+    const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
+    if (!token) {
       console.error("No auth token found");
       return;
     }
 
     this.socket = io("https://vps.paschat.net/ws/chat", {
       query: { setOnlineStatus: "true" },
-      auth: { token: this.authToken },
+      auth: { token },
       transports: ["websocket"],
       secure: true,
       withCredentials: true,
@@ -105,7 +109,7 @@ class WebSocketService {
 
   send(data: any) {
     if (!this.socket) {
-      this.connect(); // Try to connect if socket doesn't exist
+      this.connect();
     }
     
     if (!this.socket?.connected) {
@@ -126,10 +130,8 @@ class WebSocketService {
   }
 
   setAuthToken(token: string) {
-    this.authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    if (token) {
-      localStorage.setItem("authToken", this.authToken);
-    }
+    // Store token without Bearer prefix for WebSocket
+    this.authToken = token.replace("Bearer ", "");
   }
 
   disconnect() {

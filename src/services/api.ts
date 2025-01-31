@@ -25,9 +25,10 @@ class ApiService {
   private authToken: string | null = null;
 
   private constructor() {
-    // Get token from localStorage and ensure it has Bearer prefix
     const storedToken = localStorage.getItem("authToken");
-    this.authToken = storedToken;
+    if (storedToken) {
+      this.authToken = storedToken.startsWith('Bearer ') ? storedToken : `Bearer ${storedToken}`;
+    }
   }
 
   static getInstance(): ApiService {
@@ -37,11 +38,12 @@ class ApiService {
     return ApiService.instance;
   }
 
-  setAuthToken(token: string) {
-    // Ensure token has Bearer prefix when setting
-    const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-    this.authToken = bearerToken;
-    localStorage.setItem("authToken", bearerToken);
+  setAuthToken(token: string | null) {
+    if (token) {
+      this.authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    } else {
+      this.authToken = null;
+    }
   }
   
   private async request<T>(
