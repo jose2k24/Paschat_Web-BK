@@ -42,13 +42,6 @@ export interface Contact {
   roomId: string | null;
 }
 
-export interface CallState {
-  isActive: boolean;
-  type: "audio" | "video" | null;
-  participantId: string | null;
-  stream: MediaStream | null;
-}
-
 export const transformChatMessage = (msg: ChatMessage): Message => {
   return {
     id: msg.id.toString(),

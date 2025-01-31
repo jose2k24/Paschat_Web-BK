@@ -9,49 +9,6 @@ import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 
-// Mock data for users, groups, and channels
-const mockUsers: Record<string, { name: string; online: boolean }> = {
-  "1": { name: "Pizza", online: true },
-  "2": { name: "Elon", online: false },
-  "3": { name: "Pasha", online: true },
-  "4": { name: "void", online: false },
-  "5": { name: "PasChat Support", online: true },
-};
-
-const mockGroups: Record<string, { id: string; name: string; membersCount: number; description?: string; isAdmin: boolean }> = {
-  "g1": {
-    id: "g1",
-    name: "Tech Enthusiasts",
-    membersCount: 1250,
-    description: "A group for tech lovers",
-    isAdmin: true,
-  },
-  "g2": {
-    id: "g2",
-    name: "Travel Adventures",
-    membersCount: 3420,
-    description: "Share your travel experiences",
-    isAdmin: false,
-  },
-};
-
-const mockChannels: Record<string, { id: string; name: string; subscribersCount: number; description?: string; isOwner: boolean }> = {
-  "c1": {
-    id: "c1",
-    name: "Tech News Daily",
-    subscribersCount: 25000,
-    description: "Your daily dose of tech news",
-    isOwner: true,
-  },
-  "c2": {
-    id: "c2",
-    name: "Movie Reviews",
-    subscribersCount: 15000,
-    description: "Expert movie reviews and discussions",
-    isOwner: false,
-  },
-};
-
 export const ChatArea = () => {
   const { chatId = "", groupId, channelId } = useParams();
   const [message, setMessage] = useState("");
@@ -68,9 +25,7 @@ export const ChatArea = () => {
     setTypingStatus,
   } = useChat(chatId || groupId || channelId || "");
 
-  const currentChat = chatId ? mockUsers[chatId] : null;
-  const currentGroup = groupId ? mockGroups[groupId] : null;
-  const currentChannel = channelId ? mockChannels[channelId] : null;
+  const currentUser = localStorage.getItem("userPhone");
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -90,20 +45,27 @@ export const ChatArea = () => {
   useEffect(() => {
     if (message && !isTyping) {
       setIsTyping(true);
-      const timeout = setTimeout(() => setIsTyping(false), 3000);
+      setTypingStatus(true);
+      const timeout = setTimeout(() => {
+        setIsTyping(false);
+        setTypingStatus(false);
+      }, 3000);
       return () => clearTimeout(timeout);
     }
-  }, [message]);
+  }, [message, isTyping, setTypingStatus]);
 
   const handleSend = async () => {
     if (!message.trim()) return;
-    await sendMessage(message);
-    setMessage("");
+    try {
+      await sendMessage(message);
+      setMessage("");
+    } catch (error) {
+      toast.error("Failed to send message");
+    }
   };
 
   const handleMessageChange = (value: string) => {
     setMessage(value);
-    setTypingStatus(value.length > 0);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,44 +73,26 @@ export const ChatArea = () => {
     if (!file) return;
 
     try {
-      const mockFileUrl = URL.createObjectURL(file);
-      const fileType = file.type.startsWith("image/")
-        ? "image"
-        : file.type.startsWith("video/")
-        ? "video"
-        : "document";
+      const formData = new FormData();
+      formData.append("file", file);
 
-      await sendMessage(file.name, fileType);
+      const response = await fetch("https://vps.paschat.net/api/v1/file/upload/media", {
+        method: "POST",
+        headers: {
+          "Authorization": localStorage.getItem("authToken") || "",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      await sendMessage(file.name, file.type.split("/")[0] as any, data.link);
       toast.success("File uploaded successfully");
     } catch (error) {
       toast.error("Failed to upload file");
       console.error("Error uploading file:", error);
     }
-  };
-
-  const getHeaderInfo = () => {
-    if (currentChannel) {
-      return {
-        title: currentChannel.name,
-        subtitle: `${currentChannel.subscribersCount} subscribers`,
-      };
-    }
-    if (currentGroup) {
-      return {
-        title: currentGroup.name,
-        subtitle: `${currentGroup.membersCount} members`,
-      };
-    }
-    if (currentChat) {
-      return {
-        title: currentChat.name,
-        subtitle: currentChat.online ? "online" : "offline",
-      };
-    }
-    return {
-      title: "Select a chat",
-      subtitle: "",
-    };
   };
 
   if (error) {
@@ -159,30 +103,26 @@ export const ChatArea = () => {
     return <div className="flex-1 flex items-center justify-center">Loading...</div>;
   }
 
-  const headerInfo = getHeaderInfo();
-
   return (
     <div className="flex-1 flex h-full">
       <div className="flex-1 flex flex-col bg-telegram-darker">
         <ChatHeader 
           onProfileClick={() => setProfileOpen(true)}
-          title={headerInfo.title}
-          subtitle={headerInfo.subtitle}
+          title={chatId || groupId || channelId || ""}
+          subtitle={isTyping ? "typing..." : ""}
         />
         <MessageList 
           messages={messages}
-          currentUser="current_user"
+          currentUser={currentUser}
           isTyping={isTyping}
         />
         <div ref={messagesEndRef} />
-        {(!currentChannel || currentChannel.isOwner) && (
-          <MessageInput
-            message={message}
-            onMessageChange={handleMessageChange}
-            onSend={handleSend}
-            onFileClick={() => fileInputRef.current?.click()}
-          />
-        )}
+        <MessageInput
+          message={message}
+          onMessageChange={handleMessageChange}
+          onSend={handleSend}
+          onFileClick={() => fileInputRef.current?.click()}
+        />
         <input
           type="file"
           ref={fileInputRef}
@@ -193,11 +133,11 @@ export const ChatArea = () => {
         <ProfilePopup 
           open={profileOpen}
           onOpenChange={setProfileOpen}
-          userName={headerInfo.title}
+          userName={chatId || groupId || channelId || ""}
         />
       </div>
-      {currentGroup && <GroupProfileSidebar group={currentGroup} />}
-      {currentChannel && <ChannelProfileSidebar channel={currentChannel} />}
+      {groupId && <GroupProfileSidebar group={{ id: groupId, name: "", membersCount: 0, isAdmin: false }} />}
+      {channelId && <ChannelProfileSidebar channel={{ id: channelId, name: "", subscribersCount: 0, isOwner: false }} />}
     </div>
   );
 };
