@@ -136,8 +136,26 @@ export const ChatArea = () => {
           userName={chatId || groupId || channelId || ""}
         />
       </div>
-      {groupId && <GroupProfileSidebar group={{ id: parseInt(groupId, 10), name: "", membersCount: 0, isAdmin: false }} />}
-      {channelId && <ChannelProfileSidebar channel={{ id: parseInt(channelId, 10), name: "", subscribersCount: 0, isOwner: false }} />}
+      {groupId && (
+        <GroupProfileSidebar 
+          group={{ 
+            id: parseInt(groupId, 10), 
+            name: "", 
+            membersCount: 0, 
+            isAdmin: false 
+          }} 
+        />
+      )}
+      {channelId && (
+        <ChannelProfileSidebar 
+          channel={{ 
+            id: parseInt(channelId, 10), 
+            name: "", 
+            subscribersCount: 0, 
+            isOwner: false 
+          }} 
+        />
+      )}
     </div>
   );
 };
