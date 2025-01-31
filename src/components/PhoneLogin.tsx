@@ -67,12 +67,16 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
       if (response.data) {
         const { account, authToken } = response.data as LoginResponse;
         
-         // Let services handle Bearer prefix first apiservice adds prefix and wsService uses it
-         apiService.setAuthToken(authToken);
-         wsService.setAuthToken(authToken);
- 
-         localStorage.setItem("userPhone", account.phone);
-         localStorage.setItem("userName", account.username || account.phone);
+        // Add Bearer prefix when storing token
+        const bearerToken = `Bearer ${authToken}`;
+        localStorage.setItem("authToken", bearerToken);
+        localStorage.setItem("userPhone", account.phone);
+        localStorage.setItem("userName", account.username || account.phone);
+
+        // Let services handle Bearer prefix
+        apiService.setAuthToken(authToken);
+        wsService.setAuthToken(authToken);
+        
         // Initialize database and connect websocket
         await dbService.init();
         wsService.connect();

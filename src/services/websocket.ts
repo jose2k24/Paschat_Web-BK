@@ -125,10 +125,10 @@ class WebSocketService {
     });
   }
 
-  setAuthToken(token: string | null) {
-    this.authToken = token;
+  setAuthToken(token: string) {
+    this.authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     if (token) {
-      localStorage.setItem("authToken", token);
+      localStorage.setItem("authToken", this.authToken);
     }
   }
 

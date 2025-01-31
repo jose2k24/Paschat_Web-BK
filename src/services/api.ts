@@ -19,12 +19,15 @@ interface WebLoginResponse {
   account: UserAccount;
   authToken: string;
 }
+
 class ApiService {
   private static instance: ApiService;
   private authToken: string | null = null;
 
   private constructor() {
-    this.authToken = localStorage.getItem("authToken");
+    // Get token from localStorage and ensure it has Bearer prefix
+    const storedToken = localStorage.getItem("authToken");
+    this.authToken = storedToken;
   }
 
   static getInstance(): ApiService {
@@ -33,11 +36,13 @@ class ApiService {
     }
     return ApiService.instance;
   }
+
   setAuthToken(token: string) {
-    const bearerToken = `Bearer ${token}`;
+    // Ensure token has Bearer prefix when setting
+    const bearerToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     this.authToken = bearerToken;
-    localStorage.setItem("authToken", bearerToken); // Store single token with Bearer prefix
-  }  
+    localStorage.setItem("authToken", bearerToken);
+  }
   
   private async request<T>(
     endpoint: string,
@@ -49,7 +54,7 @@ class ApiService {
       };
 
       if (this.authToken) {
-        headers["Authorization"] = this.authToken; // Uses token with Bearer prefix
+        headers["Authorization"] = this.authToken;
       }
 
       const response = await fetch(`${BASE_URL}${endpoint}`, {
@@ -291,4 +296,5 @@ class ApiService {
     });
   }
 }
+
 export const apiService = ApiService.getInstance();
