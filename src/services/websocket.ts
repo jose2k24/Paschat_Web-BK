@@ -10,77 +10,87 @@ interface EventHandlers {
 class WebSocketService {
   private socket: Socket | null = null;
   private authSocket: Socket | null = null;
-  private authToken: string | null = null;
   private connected: boolean = false;
   private eventHandlers: EventHandlers = {};
-
-  connectToAuth() {
-    if (this.authSocket?.connected) return;
-
-    // Use token without Bearer prefix for WebSocket
-    const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
-
-    this.authSocket = io("https://vps.paschat.net/ws/auth", {
-      auth: token ? { token } : undefined,
-      transports: ['websocket'],
-      secure: true,
-      rejectUnauthorized: false,
-      withCredentials: true,
-      extraHeaders: {
-        "Access-Control-Allow-Origin": "*"
-      }
-    });
-
-    this.authSocket.on("connect", () => {
-      console.log("Connected to auth websocket");
-      this.authSocket?.emit("request", JSON.stringify({
-        action: "createLoginQrCode"
-      }));
-    });
-
-    this.authSocket.on("response", (data) => {
-      this.notifySubscribers("auth", "response", data);
-    });
-
-    this.setupSocketEvents(this.authSocket);
-  }
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
 
   connect() {
-    if (this.socket?.connected) return;
+    if (this.socket?.connected) return Promise.resolve();
     
-    // Use token without Bearer prefix for WebSocket
-    const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
-    if (!token) {
-      console.error("No auth token found");
-      return;
-    }
+    return new Promise<void>((resolve, reject) => {
+      try {
+        // Use token without Bearer prefix for WebSocket
+        const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
+        if (!token) {
+          reject(new Error("No auth token found"));
+          return;
+        }
 
-    this.socket = io("https://vps.paschat.net/ws/chat", {
-      query: { setOnlineStatus: "true" },
-      auth: { token },
-      transports: ["websocket"],
-      secure: true,
-      withCredentials: true,
+        this.socket = io("https://vps.paschat.net/ws/chat", {
+          query: { setOnlineStatus: "true" },
+          auth: { token },
+          transports: ["websocket"],
+          secure: true,
+          withCredentials: true,
+        });
+
+        this.socket.on("connect", () => {
+          console.log("Connected to chat websocket");
+          this.connected = true;
+          this.reconnectAttempts = 0;
+          resolve();
+        });
+
+        this.socket.on("disconnect", () => {
+          console.log("Disconnected from chat websocket");
+          this.connected = false;
+          this.handleReconnect();
+        });
+
+        this.socket.on("connect_error", (error) => {
+          console.error("Connection error:", error);
+          this.connected = false;
+          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.handleReconnect();
+          } else {
+            reject(error);
+          }
+        });
+
+        // Handle incoming messages
+        this.socket.on("response", (data) => {
+          try {
+            const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+            this.notifySubscribers("chat", parsedData.action, parsedData);
+          } catch (error) {
+            console.error("Error parsing websocket response:", error);
+          }
+        });
+
+        this.socket.on("error", (error) => {
+          console.error("WebSocket error:", error);
+          toast.error("Connection error occurred");
+        });
+
+      } catch (error) {
+        console.error("Error setting up WebSocket:", error);
+        reject(error);
+      }
     });
-
-    this.setupSocketEvents(this.socket);
   }
 
-  private setupSocketEvents(socket: Socket) {
-    socket.on("connect", () => {
-      console.log("Connected to websocket");
-      this.connected = true;
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Disconnected from websocket");
-      this.connected = false;
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("Connection error:", error);
-      toast.error("Connection error occurred");
-    });
+  private handleReconnect() {
+    this.reconnectAttempts++;
+    console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    
+    if (this.reconnectAttempts <= this.maxReconnectAttempts) {
+      setTimeout(() => {
+        this.connect().catch(console.error);
+      }, Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000));
+    } else {
+      toast.error("Failed to reconnect to chat. Please refresh the page.");
+    }
   }
 
   subscribe(namespace: string, event: string, handler: (data: any) => void) {
@@ -107,15 +117,14 @@ class WebSocketService {
     }
   }
 
-  send(data: any) {
-    if (!this.socket) {
-      this.connect();
-    }
-    
+  async send(data: any) {
     if (!this.socket?.connected) {
-      console.error("Socket not connected");
-      toast.error("Connection error: Please try again");
-      return Promise.reject(new Error("Socket not connected"));
+      try {
+        await this.connect();
+      } catch (error) {
+        console.error("Failed to connect:", error);
+        throw new Error("Failed to connect to chat server");
+      }
     }
 
     return new Promise((resolve, reject) => {
@@ -129,11 +138,6 @@ class WebSocketService {
     });
   }
 
-  setAuthToken(token: string) {
-    // Store token without Bearer prefix for WebSocket
-    this.authToken = token.replace("Bearer ", "");
-  }
-
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
@@ -145,7 +149,6 @@ class WebSocketService {
     }
     this.eventHandlers = {};
     this.connected = false;
-    this.authToken = null;
   }
 
   isConnected() {
