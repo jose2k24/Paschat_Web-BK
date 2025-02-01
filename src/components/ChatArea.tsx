@@ -33,22 +33,41 @@ export const ChatArea = () => {
     setTypingStatus,
   } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
 
+  const fetchMessages = async (roomId: number) => {
+    try {
+      console.log("Fetching messages for room:", roomId);
+      await wsService.send({
+        action: "getMessages",
+        data: {
+          chatRoomId: roomId,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          date: format(new Date(), 'yyyy-MM-dd')
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+      toast.error("Failed to fetch messages");
+    }
+  };
+
   useEffect(() => {
     const initializeChat = async () => {
       try {
         setIsConnecting(true);
-        await wsService.connect();
+        
+        if (!wsService.isConnected()) {
+          await wsService.connect();
+        }
         
         const roomId = parseInt(chatId || groupId || channelId || "0", 10);
         if (roomId) {
-          await wsService.send({
-            action: "getMessages",
-            data: {
-              chatRoomId: roomId,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              date: format(new Date(), 'yyyy-MM-dd')
-            }
-          });
+          // Verify the room exists in local DB
+          const room = await dbService.getChatRoom(roomId);
+          if (room) {
+            await fetchMessages(roomId);
+          } else {
+            toast.error("Chat room not found");
+          }
         }
         
         setIsConnecting(false);
