@@ -7,7 +7,7 @@ import { format } from "date-fns";
 
 interface MessageListProps {
   messages: Message[];
-  currentUser: string | null;
+  currentUser: number;
   isTyping?: boolean;
 }
 
@@ -29,7 +29,7 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
       {messages.map((msg, index) => (
         <MessageContextMenu
           key={msg.id}
-          messageId={msg.id}
+          messageId={String(msg.id)}
           messageType={msg.type}
           mediaUrl={msg.media_url}
           canDelete={msg.sender_id === currentUser}
