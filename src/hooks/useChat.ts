@@ -23,16 +23,28 @@ export const useChat = (contactId: number) => {
           throw new Error("Contact not found");
         }
 
-        // If contact has no roomId, create a new chat room
-        if (!contact.roomId) {
+        // If contact has roomId, use it directly
+        if (contact.roomId) {
+          setRoomId(contact.roomId);
+          console.log("Using existing room ID:", contact.roomId);
+          
+          // Fetch messages for the room
+          const localMessages = await dbService.getMessagesByRoom(contact.roomId);
+          if (localMessages.length > 0) {
+            setMessages(localMessages);
+          }
+        } else {
+          // Create new chat room if none exists
           const userPhone = localStorage.getItem('userPhone');
           if (!userPhone) throw new Error("User phone not found");
 
+          console.log("Creating new chat room between", userPhone, "and", contact.phone);
+          
           const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/room`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `${localStorage.getItem('authToken')}`
+              'Authorization': localStorage.getItem('authToken') || '',
             },
             body: JSON.stringify({
               user1Phone: userPhone,
@@ -43,30 +55,29 @@ export const useChat = (contactId: number) => {
           if (!response.ok) throw new Error("Failed to create chat room");
           
           const data = await response.json();
-          contact.roomId = data.roomId;
-          await dbService.updateContactRoomId(contact.phone, contact.roomId);
-        }
-
-        setRoomId(contact.roomId);
-
-        // Fetch messages for the room
-        const localMessages = await dbService.getMessagesByRoom(contact.roomId);
-        if (localMessages.length > 0) {
-          setMessages(localMessages);
+          const newRoomId = data.roomId;
+          
+          // Update contact with new roomId
+          await dbService.updateContactRoomId(contact.phone, newRoomId);
+          setRoomId(newRoomId);
+          console.log("Created new room ID:", newRoomId);
         }
 
         // Connect to WebSocket and fetch today's messages
-        wsService.connect();
+        await wsService.connect();
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        await wsService.send({
-          action: "getMessages",
-          data: {
-            chatRoomId: contact.roomId,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            date: today,
-          },
-        });
+        if (roomId) {
+          console.log("Fetching messages for room:", roomId);
+          await wsService.send({
+            action: "getMessages",
+            data: {
+              chatRoomId: roomId,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              date: today,
+            },
+          });
+        }
 
         setIsLoading(false);
       } catch (err) {
@@ -83,6 +94,7 @@ export const useChat = (contactId: number) => {
 
     // Handle new message event
     const handleNewMessage = async (data: ChatMessage) => {
+      console.log("Received new message:", data);
       if (data.roomId === roomId) {
         const newMessage: Message = {
           id: data.id,
@@ -100,6 +112,7 @@ export const useChat = (contactId: number) => {
 
     // Handle received messages event
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
+      console.log("Received messages:", data);
       if (data.action === "getMessages" && data.messages) {
         const newMessages = data.messages.map(msg => ({
           id: msg.id,
