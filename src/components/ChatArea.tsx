@@ -8,6 +8,7 @@ import { MessageList } from "./chat/MessageList";
 import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
+import { wsService } from "@/services/websocket";
 
 export const ChatArea = () => {
   const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
@@ -18,6 +19,7 @@ export const ChatArea = () => {
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -29,7 +31,30 @@ export const ChatArea = () => {
     setTypingStatus,
   } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
 
-  const currentUser = parseInt(localStorage.getItem("userPhone") || "0", 10);
+  useEffect(() => {
+    const initializeWebSocket = async () => {
+      try {
+        setIsConnecting(true);
+        await wsService.connect();
+        setIsConnecting(false);
+      } catch (err) {
+        console.error("WebSocket connection error:", err);
+        toast.error("Failed to connect to chat. Retrying...");
+        // Retry connection after 3 seconds
+        setTimeout(initializeWebSocket, 3000);
+      }
+    };
+
+    if (!wsService.isConnected()) {
+      initializeWebSocket();
+    } else {
+      setIsConnecting(false);
+    }
+
+    return () => {
+      wsService.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -40,7 +65,6 @@ export const ChatArea = () => {
     };
     
     scrollToBottom();
-    // Ensure scroll after images load
     const timer = setTimeout(scrollToBottom, 100);
     
     return () => clearTimeout(timer);
@@ -103,8 +127,15 @@ export const ChatArea = () => {
     return <div className="flex-1 flex items-center justify-center text-red-500">{error}</div>;
   }
 
-  if (isLoading) {
-    return <div className="flex-1 flex items-center justify-center">Loading...</div>;
+  if (isLoading || isConnecting) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+          <p className="text-gray-400">{isConnecting ? "Connecting to chat..." : "Loading messages..."}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -117,7 +148,7 @@ export const ChatArea = () => {
         />
         <MessageList 
           messages={messages}
-          currentUser={currentUser}
+          currentUser={parseInt(localStorage.getItem("userPhone") || "0", 10)}
           isTyping={isTyping}
         />
         <div ref={messagesEndRef} />
@@ -143,7 +174,7 @@ export const ChatArea = () => {
       {groupId && (
         <GroupProfileSidebar 
           group={{ 
-            id: groupId, 
+            id: groupId,
             name: "", 
             membersCount: 0, 
             isAdmin: false 
@@ -153,7 +184,7 @@ export const ChatArea = () => {
       {channelId && (
         <ChannelProfileSidebar 
           channel={{ 
-            id: channelId, 
+            id: channelId,
             name: "", 
             subscribersCount: 0, 
             isOwner: false 
