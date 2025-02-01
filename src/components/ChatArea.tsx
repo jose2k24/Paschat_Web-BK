@@ -9,6 +9,8 @@ import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
 import { wsService } from "@/services/websocket";
+import { dbService } from "@/services/db";
+import { format } from "date-fns";
 
 export const ChatArea = () => {
   const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
@@ -32,29 +34,37 @@ export const ChatArea = () => {
   } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
 
   useEffect(() => {
-    const initializeWebSocket = async () => {
+    const initializeChat = async () => {
       try {
         setIsConnecting(true);
         await wsService.connect();
+        
+        const roomId = parseInt(chatId || groupId || channelId || "0", 10);
+        if (roomId) {
+          await wsService.send({
+            action: "getMessages",
+            data: {
+              chatRoomId: roomId,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              date: format(new Date(), 'yyyy-MM-dd')
+            }
+          });
+        }
+        
         setIsConnecting(false);
       } catch (err) {
-        console.error("WebSocket connection error:", err);
+        console.error("Chat initialization error:", err);
         toast.error("Failed to connect to chat. Retrying...");
-        // Retry connection after 3 seconds
-        setTimeout(initializeWebSocket, 3000);
+        setTimeout(initializeChat, 3000);
       }
     };
 
-    if (!wsService.isConnected()) {
-      initializeWebSocket();
-    } else {
-      setIsConnecting(false);
-    }
+    initializeChat();
 
     return () => {
       wsService.disconnect();
     };
-  }, []);
+  }, [chatId, groupId, channelId]);
 
   useEffect(() => {
     const scrollToBottom = () => {

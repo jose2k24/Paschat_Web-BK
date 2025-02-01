@@ -91,14 +91,11 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
           });
 
           await dbService.updateContactRoomId(contact.phone, roomId);
-          
-          onSelectContact?.(parseInt(contact.phone, 10));
-          navigate(`/chat/${roomId}`);
         }
-      } else {
-        onSelectContact?.(parseInt(contact.phone, 10));
-        navigate(`/chat/${roomId}`);
       }
+
+      onSelectContact?.(parseInt(contact.phone, 10));
+      navigate(`/chat/${roomId}`);
     } catch (error) {
       console.error("Error handling contact selection:", error);
       toast.error("Failed to start chat");
