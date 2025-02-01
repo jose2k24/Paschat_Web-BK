@@ -16,7 +16,13 @@ class WebSocketService {
   private maxReconnectAttempts: number = 5;
   private authToken: string | null = null;
 
+
+  constructor() {
+    this.authToken = localStorage.getItem("authToken");
+  }
+
   setAuthToken(token: string) {
+    this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
     // Remove 'Bearer ' prefix if present
     this.authToken = token.replace('Bearer ', '');
   }
