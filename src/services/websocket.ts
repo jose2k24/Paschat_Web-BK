@@ -14,22 +14,59 @@ class WebSocketService {
   private eventHandlers: EventHandlers = {};
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
+  private authToken: string | null = null;
+
+  setAuthToken(token: string) {
+    // Remove 'Bearer ' prefix if present
+    this.authToken = token.replace('Bearer ', '');
+  }
+
+  connectToAuth() {
+    if (this.authSocket?.connected) return;
+
+    this.authSocket = io("https://vps.paschat.net/ws/auth", {
+      transports: ["websocket"],
+      secure: true,
+    });
+
+    this.authSocket.on("connect", () => {
+      console.log("Connected to auth websocket");
+      // Request QR code upon connection
+      this.authSocket?.emit("request", JSON.stringify({ action: "createLoginQrCode" }));
+    });
+
+    this.authSocket.on("disconnect", () => {
+      console.log("Disconnected from auth websocket");
+    });
+
+    this.authSocket.on("response", (data) => {
+      try {
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+        this.notifySubscribers("auth", parsedData.action, parsedData);
+      } catch (error) {
+        console.error("Error parsing auth websocket response:", error);
+      }
+    });
+
+    this.authSocket.on("error", (error) => {
+      console.error("Auth WebSocket error:", error);
+      toast.error("Authentication connection error occurred");
+    });
+  }
 
   connect() {
     if (this.socket?.connected) return Promise.resolve();
     
     return new Promise<void>((resolve, reject) => {
       try {
-        // Use token without Bearer prefix for WebSocket
-        const token = localStorage.getItem("authToken")?.replace("Bearer ", "");
-        if (!token) {
+        if (!this.authToken) {
           reject(new Error("No auth token found"));
           return;
         }
 
         this.socket = io("https://vps.paschat.net/ws/chat", {
           query: { setOnlineStatus: "true" },
-          auth: { token },
+          auth: { token: this.authToken },
           transports: ["websocket"],
           secure: true,
           withCredentials: true,
@@ -58,7 +95,6 @@ class WebSocketService {
           }
         });
 
-        // Handle incoming messages
         this.socket.on("response", (data) => {
           try {
             const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
