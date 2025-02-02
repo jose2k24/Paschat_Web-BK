@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { wsService } from "@/services/websocket";
 import { apiService } from "@/services/api";
 import { dbService } from "@/services/db";
-import { toast } from "sonner";
+import { toast as sonnerToast } from "sonner";
 
 interface QRCodeLoginProps {
   onPhoneLogin: () => void;
@@ -77,7 +77,7 @@ const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
             }
           } catch (error) {
             console.error("Error initializing data:", error);
-            toast.error("Failed to initialize chat data");
+            sonnerToast.error("Failed to initialize chat data");
           }
         }
         
