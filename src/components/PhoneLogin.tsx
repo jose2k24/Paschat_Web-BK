@@ -67,7 +67,7 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
       if (response.data) {
         const { account, authToken } = response.data as LoginResponse;
         
-        // Store raw token in localStorage (without Bearer prefix)
+        // Store tokens and user info
         localStorage.setItem("authToken", authToken);
         localStorage.setItem("userPhone", account.phone);
         localStorage.setItem("userName", account.username || account.phone);
@@ -77,8 +77,47 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
         // Set raw token for WebSocket
         wsService.setAuthToken(authToken);
         
-        // Initialize database and connect websocket
+        // Initialize database
         await dbService.init();
+
+        // Fetch and store contacts
+        const contactsResponse = await apiService.getSavedContacts();
+        if (contactsResponse.data) {
+          const transformedContacts = contactsResponse.data.map(contact => ({
+            phone: contact.phone,
+            profile: contact.profile,
+            name: null,
+            roomId: null
+          }));
+          await dbService.saveContacts(transformedContacts);
+        }
+
+        // Fetch and store chat rooms
+        const roomsResponse = await apiService.getChatRooms();
+        if (roomsResponse.data) {
+          await Promise.all(roomsResponse.data.map(room => 
+            dbService.saveChatRoom({
+              roomId: parseInt(room.roomId.toString(), 10),
+              roomType: "private",
+              createdAt: room.createdAt,
+              participants: room.participants,
+            })
+          ));
+
+          // Update contacts with room IDs
+          const contacts = await dbService.getContacts();
+          await Promise.all(contacts.map(async contact => {
+            const room = roomsResponse.data.find(room => 
+              room.participants.some(p => p.phone === contact.phone)
+            );
+            if (room) {
+              const roomId = parseInt(room.roomId.toString(), 10);
+              await dbService.updateContactRoomId(contact.phone, roomId);
+            }
+          }));
+        }
+
+        // Connect websocket
         wsService.connect();
         
         toast.success("Verification code sent");

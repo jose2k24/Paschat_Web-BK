@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { wsService } from "@/services/websocket";
+import { apiService } from "@/services/api";
+import { dbService } from "@/services/db";
+import { toast } from "sonner";
 
 interface QRCodeLoginProps {
   onPhoneLogin: () => void;
@@ -30,7 +33,52 @@ const QRCodeLogin = ({ onPhoneLogin }: QRCodeLoginProps) => {
         if (parsedData.account) {
           localStorage.setItem("userPhone", parsedData.account.phone);
           localStorage.setItem("userName", parsedData.account.username || parsedData.account.phone);
-          localStorage.setItem("authToken", `Bearer ${parsedData.authToken}`);
+          localStorage.setItem("authToken", parsedData.authToken);
+
+          try {
+            // Initialize database
+            await dbService.init();
+
+            // Fetch and store contacts
+            const contactsResponse = await apiService.getSavedContacts();
+            if (contactsResponse.data) {
+              const transformedContacts = contactsResponse.data.map(contact => ({
+                phone: contact.phone,
+                profile: contact.profile,
+                name: null,
+                roomId: null
+              }));
+              await dbService.saveContacts(transformedContacts);
+            }
+
+            // Fetch and store chat rooms
+            const roomsResponse = await apiService.getChatRooms();
+            if (roomsResponse.data) {
+              await Promise.all(roomsResponse.data.map(room => 
+                dbService.saveChatRoom({
+                  roomId: parseInt(room.roomId.toString(), 10),
+                  roomType: "private",
+                  createdAt: room.createdAt,
+                  participants: room.participants,
+                })
+              ));
+
+              // Update contacts with room IDs
+              const contacts = await dbService.getContacts();
+              await Promise.all(contacts.map(async contact => {
+                const room = roomsResponse.data.find(room => 
+                  room.participants.some(p => p.phone === contact.phone)
+                );
+                if (room) {
+                  const roomId = parseInt(room.roomId.toString(), 10);
+                  await dbService.updateContactRoomId(contact.phone, roomId);
+                }
+              }));
+            }
+          } catch (error) {
+            console.error("Error initializing data:", error);
+            toast.error("Failed to initialize chat data");
+          }
         }
         
         toast({
