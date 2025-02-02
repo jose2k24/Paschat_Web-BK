@@ -51,6 +51,13 @@ export interface Contact {
   roomId: number | null;
 }
 
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: number | null;
+  stream: MediaStream | null;
+}
+
 export function transformChatMessage(msg: ChatMessage): Message {
   return {
     id: msg.id,
