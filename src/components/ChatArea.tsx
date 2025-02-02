@@ -8,9 +8,6 @@ import { MessageList } from "./chat/MessageList";
 import { MessageInput } from "./chat/MessageInput";
 import { GroupProfileSidebar } from "./group/GroupProfileSidebar";
 import { ChannelProfileSidebar } from "./channel/ChannelProfileSidebar";
-import { wsService } from "@/services/websocket";
-import { dbService } from "@/services/db";
-import { format } from "date-fns";
 
 export const ChatArea = () => {
   const { chatId = "0", groupId = "0", channelId = "0" } = useParams<{
@@ -21,7 +18,6 @@ export const ChatArea = () => {
   const [message, setMessage] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -31,59 +27,8 @@ export const ChatArea = () => {
     error,
     sendMessage,
     setTypingStatus,
+    isConnected
   } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
-
-  const fetchMessages = async (roomId: number) => {
-    try {
-      console.log("Fetching messages for room:", roomId);
-      await wsService.send({
-        action: "getMessages",
-        data: {
-          chatRoomId: roomId,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          date: format(new Date(), 'yyyy-MM-dd')
-        }
-      });
-    } catch (err) {
-      console.error("Error fetching messages:", err);
-      toast.error("Failed to fetch messages");
-    }
-  };
-
-  useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        setIsConnecting(true);
-        
-        if (!wsService.isConnected()) {
-          await wsService.connect();
-        }
-        
-        const roomId = parseInt(chatId || groupId || channelId || "0", 10);
-        if (roomId) {
-          // Verify the room exists in local DB
-          const room = await dbService.getChatRoom(roomId);
-          if (room) {
-            await fetchMessages(roomId);
-          } else {
-            toast.error("Chat room not found");
-          }
-        }
-        
-        setIsConnecting(false);
-      } catch (err) {
-        console.error("Chat initialization error:", err);
-        toast.error("Failed to connect to chat. Retrying...");
-        setTimeout(initializeChat, 3000);
-      }
-    };
-
-    initializeChat();
-
-    return () => {
-      wsService.disconnect();
-    };
-  }, [chatId, groupId, channelId]);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -156,12 +101,12 @@ export const ChatArea = () => {
     return <div className="flex-1 flex items-center justify-center text-red-500">{error}</div>;
   }
 
-  if (isLoading || isConnecting) {
+  if (isLoading || !isConnected) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-          <p className="text-gray-400">{isConnecting ? "Connecting to chat..." : "Loading messages..."}</p>
+          <p className="text-gray-400">{!isConnected ? "Connecting to chat..." : "Loading messages..."}</p>
         </div>
       </div>
     );

@@ -11,12 +11,20 @@ export const useChat = (contactId: number) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<number | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
+  // Initialize WebSocket connection and chat room
   useEffect(() => {
     const initializeChat = async () => {
       try {
         setIsLoading(true);
         await dbService.init();
+
+        // Connect to WebSocket if not already connected
+        if (!wsService.isConnected()) {
+          await wsService.connect();
+        }
+        setIsConnected(true);
 
         // Get contact details including roomId
         const contact = await dbService.getContact(contactId.toString());
@@ -26,26 +34,17 @@ export const useChat = (contactId: number) => {
 
         console.log("Found contact:", contact);
 
-        // If contact has roomId, verify it exists in chat rooms
-        if (contact.roomId) {
-          const chatRoom = await dbService.getChatRoom(contact.roomId);
-          if (chatRoom) {
-            setRoomId(contact.roomId);
-            console.log("Using existing room ID:", contact.roomId);
-            
-            // Fetch messages for the room from local DB
-            const localMessages = await dbService.getMessagesByRoom(contact.roomId);
-            if (localMessages.length > 0) {
-              setMessages(localMessages);
-            }
-          } else {
-            // Room doesn't exist, need to create new one
-            contact.roomId = null;
+        // Verify existing room or create new one
+        let finalRoomId = contact.roomId;
+        if (finalRoomId) {
+          const chatRoom = await dbService.getChatRoom(finalRoomId);
+          if (!chatRoom) {
+            finalRoomId = null;
           }
         }
 
-        // Create new chat room if none exists
-        if (!contact.roomId) {
+        // Create new chat room if needed
+        if (!finalRoomId) {
           const userPhone = localStorage.getItem('userPhone');
           if (!userPhone) throw new Error("User phone not found");
 
@@ -54,38 +53,30 @@ export const useChat = (contactId: number) => {
           const response = await apiService.createChatRoom(userPhone, contact.phone);
           
           if (response.data) {
-            const newRoomId = response.data.roomId;
+            finalRoomId = response.data.roomId;
             
-            // Save new chat room to local DB
             await dbService.saveChatRoom({
-              roomId: newRoomId,
+              roomId: finalRoomId,
               roomType: 'private',
               createdAt: response.data.createdAt,
               participants: response.data.participants
             });
             
-            // Update contact with new roomId
-            await dbService.updateContactRoomId(contact.phone, newRoomId);
-            setRoomId(newRoomId);
-            console.log("Created new room ID:", newRoomId);
+            await dbService.updateContactRoomId(contact.phone, finalRoomId);
           }
         }
 
-        // Connect to WebSocket and fetch today's messages
-        if (!wsService.isConnected()) {
-          await wsService.connect();
-        }
+        setRoomId(finalRoomId);
 
-        const today = format(new Date(), 'yyyy-MM-dd');
-        
-        if (roomId) {
-          console.log("Fetching messages for room:", roomId);
+        // Fetch messages for the room
+        if (finalRoomId) {
+          console.log("Fetching messages for room:", finalRoomId);
           await wsService.send({
             action: "getMessages",
             data: {
-              chatRoomId: roomId,
+              chatRoomId: finalRoomId,
               timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              date: today,
+              date: format(new Date(), 'yyyy-MM-dd'),
             },
           });
         }
@@ -103,7 +94,7 @@ export const useChat = (contactId: number) => {
       initializeChat();
     }
 
-    // Handle new message event
+    // Handle WebSocket events
     const handleNewMessage = async (data: ChatMessage) => {
       console.log("Received new message:", data);
       if (data.roomId === roomId) {
@@ -123,7 +114,6 @@ export const useChat = (contactId: number) => {
       }
     };
 
-    // Handle received messages event
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
       console.log("Received messages:", data);
       if (data.action === "getMessages" && data.messages) {
@@ -165,7 +155,6 @@ export const useChat = (contactId: number) => {
       const chatRoom = await dbService.getChatRoom(roomId);
       if (!chatRoom) throw new Error("Chat room not found");
 
-      // Find recipient ID from participants
       const recipient = chatRoom.participants.find(p => p.phone !== userPhone);
       if (!recipient) throw new Error("Recipient not found");
 
@@ -188,12 +177,14 @@ export const useChat = (contactId: number) => {
   };
 
   const setTypingStatus = (isTyping: boolean) => {
-    wsService.send({
-      action: "setStatus",
-      data: {
-        status: isTyping ? "typing" : "online",
-      },
-    });
+    if (isConnected) {
+      wsService.send({
+        action: "setStatus",
+        data: {
+          status: isTyping ? "typing" : "online",
+        },
+      });
+    }
   };
 
   return {
@@ -203,5 +194,6 @@ export const useChat = (contactId: number) => {
     sendMessage,
     setTypingStatus,
     roomId,
+    isConnected,
   };
 };
