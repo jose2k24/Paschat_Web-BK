@@ -11,10 +11,6 @@ export interface Message {
   read: boolean;
   received: boolean;
   deleteFlag: boolean;
-  reportFlag: boolean;
-  views: number;
-  comments: any[] | null;
-  reactions: any[] | null;
   callType: "audio" | "video" | null;
 }
 
@@ -43,20 +39,11 @@ export interface ChatRoom {
   }>;
 }
 
-export interface CreateRoomRequest {
-  user1Phone: string;
-  user2Phone: string;
-}
-
 // Contact interfaces
 export interface Contact {
   phone: string;
   profile: string | null;
   roomId: number | null;
-}
-
-export interface SaveContactsRequest {
-  contacts: string[];
 }
 
 // Community interfaces
@@ -109,10 +96,6 @@ export function transformChatMessage(msg: Message): Message {
     read: msg.read,
     received: msg.received,
     deleteFlag: msg.deleteFlag,
-    reportFlag: msg.reportFlag,
-    views: msg.views,
-    comments: msg.comments,
-    reactions: msg.reactions,
     callType: msg.callType
   };
 }

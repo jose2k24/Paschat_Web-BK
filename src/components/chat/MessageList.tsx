@@ -15,13 +15,13 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
   const isFirstInStack = (index: number, message: Message) => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
-    return prevMessage.sender_id !== message.sender_id;
+    return prevMessage.senderId !== message.senderId;
   };
 
   const isLastInStack = (index: number, message: Message) => {
     if (index === messages.length - 1) return true;
     const nextMessage = messages[index + 1];
-    return nextMessage.sender_id !== message.sender_id;
+    return nextMessage.senderId !== message.senderId;
   };
 
   return (
@@ -31,19 +31,19 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
           key={msg.id}
           messageId={String(msg.id)}
           messageType={msg.type}
-          canDelete={msg.sender_id === currentUser}
+          canDelete={msg.senderId === currentUser}
         >
           <div className={cn(
             "flex items-end gap-2",
-            msg.sender_id === currentUser ? "justify-end" : "justify-start"
+            msg.senderId === currentUser ? "justify-end" : "justify-start"
           )}>
-            {msg.sender_id !== currentUser && isFirstInStack(index, msg) && (
+            {msg.senderId !== currentUser && isFirstInStack(index, msg) && (
               <Avatar className="w-8 h-8" />
             )}
             <div
               className={cn(
                 "message group max-w-[70%]",
-                msg.sender_id === currentUser ? "message-sent bg-telegram-blue" : "message-received bg-telegram-message",
+                msg.senderId === currentUser ? "message-sent bg-telegram-blue" : "message-received bg-telegram-message",
                 !isLastInStack(index, msg) && "mb-1"
               )}
             >
@@ -84,11 +84,10 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
               )}
               <div className="flex items-center gap-1.5 justify-end mt-1 text-xs text-gray-300">
                 <span className="message-timestamp">
-                  {format(new Date(msg.created_at), "HH:mm")}
+                  {format(new Date(msg.createdAt), "HH:mm")}
                 </span>
-                {msg.sender_id === currentUser && (
+                {msg.senderId === currentUser && (
                   <span className="message-status">
-                    {msg.is_edited && <span className="mr-1">edited</span>}
                     {msg.read ? (
                       <CheckCheck className="h-3 w-3" />
                     ) : (
