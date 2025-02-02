@@ -49,6 +49,14 @@ export interface Contact {
   roomId: number | null;
 }
 
+// Call state interface
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: number | null;
+  stream: MediaStream | null;
+}
+
 // Helper function to transform message formats
 export function transformChatMessage(msg: any): Message {
   return {
