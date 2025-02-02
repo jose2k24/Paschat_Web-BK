@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, ChatMessage, transformChatMessage } from "@/types/chat";
+import { Message, GetMessagesRequest, transformChatMessage } from "@/types/chat";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 export const useChat = (roomId: number) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -27,7 +27,6 @@ export const useChat = (roomId: number) => {
           await wsService.connect();
         }
         setIsConnected(true);
-        console.log("WebSocket connected:", wsService.isConnected());
 
         if (roomId) {
           console.log("Fetching messages for room:", roomId);
@@ -36,14 +35,20 @@ export const useChat = (roomId: number) => {
             throw new Error("Chat room not found");
           }
 
+          const request: GetMessagesRequest = {
+            chatRoomId: roomId,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            date: format(new Date(), 'yyyy-MM-dd'),
+          };
+
           await wsService.send({
             action: "getMessages",
-            data: {
-              chatRoomId: roomId,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              date: format(new Date(), 'yyyy-MM-dd'),
-            },
+            data: request
           });
+
+          // Load existing messages from local DB while waiting for new ones
+          const localMessages = await dbService.getMessagesByRoom(roomId);
+          setMessages(localMessages);
         }
 
         setIsLoading(false);
@@ -54,48 +59,21 @@ export const useChat = (roomId: number) => {
       }
     };
 
-    const handleNewMessage = async (data: ChatMessage) => {
+    const handleNewMessage = async (data: any) => {
       console.log("Received new message:", data);
       if (data.roomId === roomId) {
-        await dbService.saveMessage(data);
-        
-        const userPhone = localStorage.getItem("userPhone");
-        if (!userPhone) {
-          console.error("User phone not found in localStorage");
-          return;
-        }
-
-        const room = await dbService.getChatRoom(data.roomId);
-        if (!room) {
-          console.error("Chat room not found for message:", data);
-          return;
-        }
-
-        const currentUserParticipant = room.participants.find(p => p.phone === userPhone);
-        const isSender = currentUserParticipant?.id === data.senderId;
-
-        setMessages(prev => [...prev, transformChatMessage(data)]);
+        const message = transformChatMessage(data);
+        await dbService.saveMessage(message);
+        setMessages(prev => [...prev, message]);
       }
     };
 
-    const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
+    const handleReceivedMessages = async (data: any) => {
       console.log("Received messages:", data);
       if (data.action === "getMessages" && data.messages) {
-        await dbService.saveMessages(data.messages);
-
-        const userPhone = localStorage.getItem("userPhone");
-        if (!userPhone) {
-          console.error("User phone not found in localStorage");
-          return;
-        }
-
-        const room = await dbService.getChatRoom(roomId);
-        if (!room) {
-          console.error("Chat room not found");
-          return;
-        }
-
-        setMessages(prev => [...prev, ...data.messages.map(transformChatMessage)]);
+        const transformedMessages = data.messages.map(transformChatMessage);
+        await dbService.saveMessages(transformedMessages);
+        setMessages(prev => [...prev, ...transformedMessages]);
       }
     };
 

@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { Message, ChatRoom, Contact, Channel, Group } from '@/types/chat';
+import { Message, ChatRoom, Contact } from '@/types/chat';
 
 interface ChatDB extends DBSchema {
   contacts: {
@@ -24,17 +24,7 @@ interface ChatDB extends DBSchema {
     indexes: {
       'by-room': number;
       'by-sender': number;
-      'by-type': string;
       'by-date': string;
-    };
-  };
-  communities: {
-    key: number;
-    value: Channel | Group;
-    indexes: {
-      'by-type': string;
-      'by-name': string;
-      'by-visibility': string;
     };
   };
 }
@@ -61,26 +51,18 @@ class DatabaseService {
         const messageStore = db.createObjectStore('messages', { keyPath: 'id' });
         messageStore.createIndex('by-room', 'roomId');
         messageStore.createIndex('by-sender', 'senderId');
-        messageStore.createIndex('by-type', 'type');
         messageStore.createIndex('by-date', 'createdAt');
-
-        // Communities store
-        const communityStore = db.createObjectStore('communities', { keyPath: 'id' });
-        communityStore.createIndex('by-type', 'type');
-        communityStore.createIndex('by-name', 'name');
-        communityStore.createIndex('by-visibility', 'visibility');
       },
     });
   }
 
   async clearAll() {
     if (!this.db) await this.init();
-    const tx = this.db!.transaction(['contacts', 'chatRooms', 'messages', 'communities'], 'readwrite');
+    const tx = this.db!.transaction(['contacts', 'chatRooms', 'messages'], 'readwrite');
     await Promise.all([
       tx.objectStore('contacts').clear(),
       tx.objectStore('chatRooms').clear(),
       tx.objectStore('messages').clear(),
-      tx.objectStore('communities').clear(),
     ]);
     await tx.done;
   }
@@ -106,6 +88,15 @@ class DatabaseService {
   async getContacts(): Promise<Contact[]> {
     if (!this.db) await this.init();
     return this.db!.getAll('contacts');
+  }
+
+  async updateContactRoomId(phone: string, roomId: number) {
+    if (!this.db) await this.init();
+    const contact = await this.getContact(phone);
+    if (contact) {
+      contact.roomId = roomId;
+      await this.saveContact(contact);
+    }
   }
 
   // Chat room operations
@@ -139,33 +130,16 @@ class DatabaseService {
 
   async getMessagesByRoom(roomId: number): Promise<Message[]> {
     if (!this.db) await this.init();
-    return this.db!.getAllFromIndex('messages', 'by-room', roomId);
+    const messages = await this.db!.getAllFromIndex('messages', 'by-room', roomId);
+    return messages.sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
   }
 
   async getMessagesByDate(roomId: number, date: string): Promise<Message[]> {
     if (!this.db) await this.init();
     const messages = await this.getMessagesByRoom(roomId);
     return messages.filter(msg => msg.createdAt.startsWith(date));
-  }
-
-  // Community operations
-  async saveCommunity(community: Channel | Group) {
-    if (!this.db) await this.init();
-    await this.db!.put('communities', community);
-  }
-
-  async getCommunity(id: number): Promise<Channel | Group | undefined> {
-    if (!this.db) await this.init();
-    return this.db!.get('communities', id);
-  }
-
-  async searchCommunities(keyword: string): Promise<(Channel | Group)[]> {
-    if (!this.db) await this.init();
-    const communities = await this.db!.getAll('communities');
-    return communities.filter(c => 
-      c.name.toLowerCase().includes(keyword.toLowerCase()) ||
-      c.description.toLowerCase().includes(keyword.toLowerCase())
-    );
   }
 }
 

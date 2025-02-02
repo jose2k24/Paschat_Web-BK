@@ -1,4 +1,4 @@
-// Message interfaces for different operations
+// Base message interface
 export interface Message {
   id: number;
   type: "text" | "image" | "video" | "document" | "audio";
@@ -14,6 +14,13 @@ export interface Message {
   callType: "audio" | "video" | null;
 }
 
+// Request interfaces
+export interface GetMessagesRequest {
+  chatRoomId: number;
+  timeZone: string;
+  date: string;
+}
+
 export interface SendMessageRequest {
   content: string;
   dataType: "text" | "image" | "video" | "document" | "audio";
@@ -22,68 +29,28 @@ export interface SendMessageRequest {
   recipientId: number;
 }
 
-export interface GetMessagesRequest {
-  chatRoomId: number;
-  timeZone: string;
-  date: string;
+// Chat room interfaces
+export interface ChatRoomParticipant {
+  id: number;
+  phone: string;
 }
 
-// Chat room interfaces
 export interface ChatRoom {
   roomId: number;
   roomType: "private" | "group" | "channel";
   createdAt: string;
-  participants: Array<{
-    id: number;
-    phone: string;
-  }>;
+  participants: ChatRoomParticipant[];
 }
 
-// Contact interfaces
+// Contact interface
 export interface Contact {
   phone: string;
   profile: string | null;
   roomId: number | null;
 }
 
-// Community interfaces
-export interface CommunityBase {
-  id: number;
-  type: "channel" | "group";
-  visibility: "public" | "private";
-  name: string;
-  description: string;
-  roomId: number;
-  subscriberCount: number;
-  ownerId: number;
-  profile: string | null;
-  createdAt: string;
-  deleteFlag: boolean;
-  invitationLink: string;
-}
-
-export interface Channel extends CommunityBase {
-  type: "channel";
-  permissions: {
-    commenting: "all" | "admins";
-    communitySharing: "all" | "admins";
-  };
-}
-
-export interface Group extends CommunityBase {
-  type: "group";
-  permissions: {
-    polls: "all" | "admins";
-    pinning: "all" | "admins";
-    messaging: "all" | "admins";
-    prevMessage: boolean;
-    mediaSharing: "all" | "admins";
-    communitySharing: "all" | "admins";
-  };
-}
-
 // Helper function to transform message formats
-export function transformChatMessage(msg: Message): Message {
+export function transformChatMessage(msg: any): Message {
   return {
     id: msg.id,
     type: msg.type,
@@ -94,7 +61,7 @@ export function transformChatMessage(msg: Message): Message {
     replyTo: msg.replyTo,
     createdAt: msg.createdAt,
     read: msg.read,
-    received: msg.received,
+    received: msg.received || msg.recieved, // Handle both spellings from API
     deleteFlag: msg.deleteFlag,
     callType: msg.callType
   };
