@@ -81,8 +81,7 @@ export const useChat = (roomId: number) => {
           type: data.type,
           is_edited: false,
           created_at: data.createdAt,
-          read: data.read,
-          media_url: data.mediaUrl
+          read: data.read
         };
 
         setMessages(prev => [...prev, newMessage]);
@@ -119,8 +118,7 @@ export const useChat = (roomId: number) => {
           type: msg.type,
           is_edited: false,
           created_at: msg.createdAt,
-          read: msg.read,
-          media_url: msg.mediaUrl
+          read: msg.read
         }));
 
         setMessages(prev => [...prev, ...newMessages]);
@@ -140,7 +138,7 @@ export const useChat = (roomId: number) => {
     };
   }, [roomId]);
 
-  const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
+  const sendMessage = async (content: string, type: Message["type"] = "text") => {
     if (!roomId) {
       toast.error("Chat room not initialized");
       return;
@@ -163,7 +161,6 @@ export const useChat = (roomId: number) => {
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
-          mediaUrl,
           recipientId: recipient.id
         },
       });
