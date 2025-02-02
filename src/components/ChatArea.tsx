@@ -90,7 +90,7 @@ export const ChatArea = () => {
 
       const data = await response.json();
       // Since we no longer support mediaUrl, we'll just send the file name
-      await sendMessage(file.name, file.type.split("/")[0] as Message["type"]);
+      await sendMessage(file.name, file.type.split("/")[0] as "image" | "video" | "document" | "audio");
       toast.success("File uploaded successfully");
     } catch (error) {
       toast.error("Failed to upload file");

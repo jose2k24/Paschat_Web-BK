@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, ChatMessage, ChatRoom } from "@/types/chat";
+import { Message, ChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -17,10 +17,19 @@ export const useChat = (roomId: number) => {
         setIsLoading(true);
         await dbService.init();
 
+        // Get the auth token
+        const authToken = localStorage.getItem("authToken");
+        if (!authToken) {
+          throw new Error("No auth token found");
+        }
+
+        // Initialize WebSocket connection if not already connected
         if (!wsService.isConnected()) {
+          console.log("Initializing WebSocket connection...");
           await wsService.connect();
         }
         setIsConnected(true);
+        console.log("WebSocket connected:", wsService.isConnected());
 
         if (roomId) {
           console.log("Fetching messages for room:", roomId);
@@ -55,21 +64,18 @@ export const useChat = (roomId: number) => {
         // Save message to local DB first
         await dbService.saveMessage(data);
         
-        // Get current user's phone from localStorage
         const userPhone = localStorage.getItem("userPhone");
         if (!userPhone) {
           console.error("User phone not found in localStorage");
           return;
         }
 
-        // Get chat room to determine if user is sender
         const room = await dbService.getChatRoom(data.roomId);
         if (!room) {
           console.error("Chat room not found for message:", data);
           return;
         }
 
-        // Determine if current user is the sender
         const currentUserParticipant = room.participants.find(p => p.phone === userPhone);
         const isSender = currentUserParticipant?.id === data.senderId;
 
@@ -91,24 +97,19 @@ export const useChat = (roomId: number) => {
     const handleReceivedMessages = async (data: { action: string; messages: ChatMessage[] }) => {
       console.log("Received messages:", data);
       if (data.action === "getMessages" && data.messages) {
-        // Save all messages to local DB first
         await dbService.saveMessages(data.messages);
 
-        // Get current user's phone
         const userPhone = localStorage.getItem("userPhone");
         if (!userPhone) {
           console.error("User phone not found in localStorage");
           return;
         }
 
-        // Get chat room to determine message directions
         const room = await dbService.getChatRoom(roomId);
         if (!room) {
           console.error("Chat room not found");
           return;
         }
-
-        const currentUserParticipant = room.participants.find(p => p.phone === userPhone);
 
         const newMessages = data.messages.map(msg => ({
           id: msg.id,
@@ -129,6 +130,7 @@ export const useChat = (roomId: number) => {
     const unsubscribeReceived = wsService.subscribe("chat", "getMessages", handleReceivedMessages);
 
     if (roomId) {
+      console.log("Initializing chat with roomId:", roomId);
       initializeChat();
     }
 
@@ -138,7 +140,7 @@ export const useChat = (roomId: number) => {
     };
   }, [roomId]);
 
-  const sendMessage = async (content: string, type: Message["type"] = "text") => {
+  const sendMessage = async (content: string, type: "text" | "image" | "video" | "document" | "audio" = "text") => {
     if (!roomId) {
       toast.error("Chat room not initialized");
       return;
