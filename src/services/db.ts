@@ -1,5 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { ChatMessage, Message, ChatRoom, Contact, transformChatMessage } from '@/types/chat';
+import { Message, ChatRoom, Contact, Channel, Group } from '@/types/chat';
 
 interface ChatDB extends DBSchema {
   contacts: {
@@ -25,6 +25,16 @@ interface ChatDB extends DBSchema {
       'by-room': number;
       'by-sender': number;
       'by-type': string;
+      'by-date': string;
+    };
+  };
+  communities: {
+    key: number;
+    value: Channel | Group;
+    indexes: {
+      'by-type': string;
+      'by-name': string;
+      'by-visibility': string;
     };
   };
 }
@@ -49,20 +59,28 @@ class DatabaseService {
 
         // Messages store
         const messageStore = db.createObjectStore('messages', { keyPath: 'id' });
-        messageStore.createIndex('by-room', 'chat_id');
-        messageStore.createIndex('by-sender', 'sender_id');
+        messageStore.createIndex('by-room', 'roomId');
+        messageStore.createIndex('by-sender', 'senderId');
         messageStore.createIndex('by-type', 'type');
+        messageStore.createIndex('by-date', 'createdAt');
+
+        // Communities store
+        const communityStore = db.createObjectStore('communities', { keyPath: 'id' });
+        communityStore.createIndex('by-type', 'type');
+        communityStore.createIndex('by-name', 'name');
+        communityStore.createIndex('by-visibility', 'visibility');
       },
     });
   }
 
   async clearAll() {
     if (!this.db) await this.init();
-    const tx = this.db!.transaction(['contacts', 'chatRooms', 'messages'], 'readwrite');
+    const tx = this.db!.transaction(['contacts', 'chatRooms', 'messages', 'communities'], 'readwrite');
     await Promise.all([
       tx.objectStore('contacts').clear(),
       tx.objectStore('chatRooms').clear(),
       tx.objectStore('messages').clear(),
+      tx.objectStore('communities').clear(),
     ]);
     await tx.done;
   }
@@ -90,26 +108,10 @@ class DatabaseService {
     return this.db!.getAll('contacts');
   }
 
-  async updateContactRoomId(phone: string, roomId: number) {
-    if (!this.db) await this.init();
-    const contact = await this.getContact(phone);
-    if (contact) {
-      contact.roomId = roomId;
-      await this.saveContact(contact);
-    }
-  }
-
   // Chat room operations
   async saveChatRoom(room: ChatRoom) {
     if (!this.db) await this.init();
     await this.db!.put('chatRooms', room);
-  }
-
-  async saveChatRooms(rooms: ChatRoom[]) {
-    if (!this.db) await this.init();
-    const tx = this.db!.transaction('chatRooms', 'readwrite');
-    await Promise.all(rooms.map(room => tx.store.put(room)));
-    await tx.done;
   }
 
   async getChatRoom(roomId: number): Promise<ChatRoom | undefined> {
@@ -137,26 +139,33 @@ class DatabaseService {
 
   async getMessagesByRoom(roomId: number): Promise<Message[]> {
     if (!this.db) await this.init();
-    const messages = await this.db!.getAllFromIndex('messages', 'by-room', roomId);
-    return messages;
+    return this.db!.getAllFromIndex('messages', 'by-room', roomId);
   }
 
-  async getMessagesBySender(senderId: number): Promise<Message[]> {
-    if (!this.db) await this.init();
-    return this.db!.getAllFromIndex('messages', 'by-sender', senderId);
-  }
-
-  async getMessagesByType(type: Message['type']): Promise<Message[]> {
-    if (!this.db) await this.init();
-    return this.db!.getAllFromIndex('messages', 'by-type', type);
-  }
-
-  async getLastMessageByRoom(roomId: number): Promise<Message | undefined> {
+  async getMessagesByDate(roomId: number, date: string): Promise<Message[]> {
     if (!this.db) await this.init();
     const messages = await this.getMessagesByRoom(roomId);
-    return messages.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )[0];
+    return messages.filter(msg => msg.createdAt.startsWith(date));
+  }
+
+  // Community operations
+  async saveCommunity(community: Channel | Group) {
+    if (!this.db) await this.init();
+    await this.db!.put('communities', community);
+  }
+
+  async getCommunity(id: number): Promise<Channel | Group | undefined> {
+    if (!this.db) await this.init();
+    return this.db!.get('communities', id);
+  }
+
+  async searchCommunities(keyword: string): Promise<(Channel | Group)[]> {
+    if (!this.db) await this.init();
+    const communities = await this.db!.getAll('communities');
+    return communities.filter(c => 
+      c.name.toLowerCase().includes(keyword.toLowerCase()) ||
+      c.description.toLowerCase().includes(keyword.toLowerCase())
+    );
   }
 }
 

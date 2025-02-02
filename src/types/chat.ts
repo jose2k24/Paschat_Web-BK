@@ -1,22 +1,5 @@
+// Message interfaces for different operations
 export interface Message {
-  id: number;
-  content: string;
-  sender_id: number;
-  chat_id: number;
-  type: "text" | "image" | "video" | "document" | "audio";
-  is_edited: boolean;
-  created_at: string;
-  read: boolean;
-  received: boolean;
-  delete_flag: boolean;
-  report_flag: boolean;
-  views: number;
-  comments: any[] | null;
-  reactions: any[] | null;
-  call_type: "audio" | "video" | null;
-}
-
-export interface ChatMessage {
   id: number;
   type: "text" | "image" | "video" | "document" | "audio";
   content: string;
@@ -35,6 +18,21 @@ export interface ChatMessage {
   callType: "audio" | "video" | null;
 }
 
+export interface SendMessageRequest {
+  content: string;
+  dataType: "text" | "image" | "video" | "document" | "audio";
+  createdAt: string;
+  roomId: number;
+  recipientId: number;
+}
+
+export interface GetMessagesRequest {
+  chatRoomId: number;
+  timeZone: string;
+  date: string;
+}
+
+// Chat room interfaces
 export interface ChatRoom {
   roomId: number;
   roomType: "private" | "group" | "channel";
@@ -45,35 +43,76 @@ export interface ChatRoom {
   }>;
 }
 
+export interface CreateRoomRequest {
+  user1Phone: string;
+  user2Phone: string;
+}
+
+// Contact interfaces
 export interface Contact {
   phone: string;
   profile: string | null;
   roomId: number | null;
 }
 
-export interface CallState {
-  isActive: boolean;
-  type: "audio" | "video" | null;
-  participantId: number | null;
-  stream: MediaStream | null;
+export interface SaveContactsRequest {
+  contacts: string[];
 }
 
-export function transformChatMessage(msg: ChatMessage): Message {
+// Community interfaces
+export interface CommunityBase {
+  id: number;
+  type: "channel" | "group";
+  visibility: "public" | "private";
+  name: string;
+  description: string;
+  roomId: number;
+  subscriberCount: number;
+  ownerId: number;
+  profile: string | null;
+  createdAt: string;
+  deleteFlag: boolean;
+  invitationLink: string;
+}
+
+export interface Channel extends CommunityBase {
+  type: "channel";
+  permissions: {
+    commenting: "all" | "admins";
+    communitySharing: "all" | "admins";
+  };
+}
+
+export interface Group extends CommunityBase {
+  type: "group";
+  permissions: {
+    polls: "all" | "admins";
+    pinning: "all" | "admins";
+    messaging: "all" | "admins";
+    prevMessage: boolean;
+    mediaSharing: "all" | "admins";
+    communitySharing: "all" | "admins";
+  };
+}
+
+// Helper function to transform message formats
+export function transformChatMessage(msg: Message): Message {
   return {
     id: msg.id,
-    content: msg.content,
-    sender_id: msg.senderId,
-    chat_id: msg.roomId,
     type: msg.type,
-    is_edited: false,
-    created_at: msg.createdAt,
+    content: msg.content,
+    senderId: msg.senderId,
+    recipientId: msg.recipientId,
+    roomId: msg.roomId,
+    replyTo: msg.replyTo,
+    createdAt: msg.createdAt,
     read: msg.read,
     received: msg.received,
-    delete_flag: msg.deleteFlag,
-    report_flag: msg.reportFlag,
+    deleteFlag: msg.deleteFlag,
+    reportFlag: msg.reportFlag,
     views: msg.views,
     comments: msg.comments,
     reactions: msg.reactions,
-    call_type: msg.callType
+    callType: msg.callType
   };
 }
