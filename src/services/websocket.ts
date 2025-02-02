@@ -8,6 +8,7 @@ interface EventHandlers {
 }
 
 class WebSocketService {
+  private static instance: WebSocketService;
   private socket: Socket | null = null;
   private authSocket: Socket | null = null;
   private connected: boolean = false;
@@ -15,16 +16,42 @@ class WebSocketService {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private authToken: string | null = null;
+  private connectionPromise: Promise<void> | null = null;
 
-
-  constructor() {
+  private constructor() {
     this.authToken = localStorage.getItem("authToken");
+    // Attempt to connect if auth token exists
+    if (this.authToken) {
+      this.connect();
+    }
+
+    // Listen for storage events to handle token changes
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'authToken') {
+        if (event.newValue) {
+          this.authToken = event.newValue;
+          this.connect();
+        } else {
+          this.disconnect();
+        }
+      }
+    });
   }
 
-  setAuthToken(token: string) {
-    this.authToken = localStorage.getItem("authToken"); // Use the same token from localStorage
-    // Remove 'Bearer ' prefix if present
-    this.authToken = token.replace('Bearer ', '');
+  public static getInstance(): WebSocketService {
+    if (!WebSocketService.instance) {
+      WebSocketService.instance = new WebSocketService();
+    }
+    return WebSocketService.instance;
+  }
+
+  setAuthToken(token: string | null) {
+    this.authToken = token;
+    if (token) {
+      this.connect();
+    } else {
+      this.disconnect();
+    }
   }
 
   connectToAuth() {
@@ -37,7 +64,6 @@ class WebSocketService {
 
     this.authSocket.on("connect", () => {
       console.log("Connected to auth websocket");
-      // Request QR code upon connection
       this.authSocket?.emit("request", JSON.stringify({ action: "createLoginQrCode" }));
     });
 
@@ -60,10 +86,18 @@ class WebSocketService {
     });
   }
 
-  connect() {
-    if (this.socket?.connected) return Promise.resolve();
-    
-    return new Promise<void>((resolve, reject) => {
+  connect(): Promise<void> {
+    // Return existing connection promise if connection is in progress
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    // Return resolved promise if already connected
+    if (this.socket?.connected) {
+      return Promise.resolve();
+    }
+
+    this.connectionPromise = new Promise<void>((resolve, reject) => {
       try {
         if (!this.authToken) {
           reject(new Error("No auth token found"));
@@ -76,6 +110,9 @@ class WebSocketService {
           transports: ["websocket"],
           secure: true,
           withCredentials: true,
+          reconnection: true,
+          reconnectionAttempts: this.maxReconnectAttempts,
+          reconnectionDelay: 1000,
         });
 
         this.socket.on("connect", () => {
@@ -119,7 +156,11 @@ class WebSocketService {
         console.error("Error setting up WebSocket:", error);
         reject(error);
       }
+    }).finally(() => {
+      this.connectionPromise = null;
     });
+
+    return this.connectionPromise;
   }
 
   private handleReconnect() {
@@ -198,4 +239,4 @@ class WebSocketService {
   }
 }
 
-export const wsService = new WebSocketService();
+export const wsService = WebSocketService.getInstance();
