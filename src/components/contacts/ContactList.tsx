@@ -25,7 +25,6 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
           const transformedContacts: Contact[] = response.data.map(contact => ({
             phone: contact.phone,
             profile: contact.profile,
-            name: null,
             roomId: null
           }));
 
@@ -103,8 +102,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
   };
 
   const filteredContacts = contacts.filter(contact => 
-    contact.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (contact.name?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+    contact.phone.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -131,16 +129,16 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
               {contact.profile ? (
                 <img
                   src={contact.profile}
-                  alt={contact.name || contact.phone}
+                  alt={contact.phone}
                   className="w-full h-full rounded-full object-cover"
                 />
               ) : (
-                (contact.name?.[0] || contact.phone[0])
+                contact.phone[0]
               )}
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-white font-medium truncate">
-                {contact.name || contact.phone}
+                {contact.phone}
               </h3>
               <p className="text-sm text-gray-400 truncate">{contact.phone}</p>
             </div>

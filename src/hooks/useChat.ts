@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, ChatMessage } from "@/types/chat";
+import { Message, ChatMessage, transformChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -17,13 +17,11 @@ export const useChat = (roomId: number) => {
         setIsLoading(true);
         await dbService.init();
 
-        // Get the auth token
         const authToken = localStorage.getItem("authToken");
         if (!authToken) {
           throw new Error("No auth token found");
         }
 
-        // Initialize WebSocket connection if not already connected
         if (!wsService.isConnected()) {
           console.log("Initializing WebSocket connection...");
           await wsService.connect();
@@ -33,13 +31,11 @@ export const useChat = (roomId: number) => {
 
         if (roomId) {
           console.log("Fetching messages for room:", roomId);
-          // Verify room exists in local DB
           const room = await dbService.getChatRoom(roomId);
           if (!room) {
             throw new Error("Chat room not found");
           }
 
-          // Fetch messages via WebSocket
           await wsService.send({
             action: "getMessages",
             data: {
@@ -61,7 +57,6 @@ export const useChat = (roomId: number) => {
     const handleNewMessage = async (data: ChatMessage) => {
       console.log("Received new message:", data);
       if (data.roomId === roomId) {
-        // Save message to local DB first
         await dbService.saveMessage(data);
         
         const userPhone = localStorage.getItem("userPhone");
@@ -79,18 +74,7 @@ export const useChat = (roomId: number) => {
         const currentUserParticipant = room.participants.find(p => p.phone === userPhone);
         const isSender = currentUserParticipant?.id === data.senderId;
 
-        const newMessage: Message = {
-          id: data.id,
-          content: data.content,
-          sender_id: data.senderId,
-          chat_id: data.roomId,
-          type: data.type,
-          is_edited: false,
-          created_at: data.createdAt,
-          read: data.read
-        };
-
-        setMessages(prev => [...prev, newMessage]);
+        setMessages(prev => [...prev, transformChatMessage(data)]);
       }
     };
 
@@ -111,18 +95,7 @@ export const useChat = (roomId: number) => {
           return;
         }
 
-        const newMessages = data.messages.map(msg => ({
-          id: msg.id,
-          content: msg.content,
-          sender_id: msg.senderId,
-          chat_id: msg.roomId,
-          type: msg.type,
-          is_edited: false,
-          created_at: msg.createdAt,
-          read: msg.read
-        }));
-
-        setMessages(prev => [...prev, ...newMessages]);
+        setMessages(prev => [...prev, ...data.messages.map(transformChatMessage)]);
       }
     };
 
@@ -140,7 +113,7 @@ export const useChat = (roomId: number) => {
     };
   }, [roomId]);
 
-  const sendMessage = async (content: string, type: "text" | "image" | "video" | "document" | "audio" = "text") => {
+  const sendMessage = async (content: string, type: Message["type"] = "text") => {
     if (!roomId) {
       toast.error("Chat room not initialized");
       return;

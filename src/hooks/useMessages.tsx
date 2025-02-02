@@ -11,6 +11,14 @@ const mockMessages: Record<number, Message[]> = {
       type: "text",
       is_edited: false,
       created_at: new Date().toISOString(),
+      read: false,
+      received: false,
+      delete_flag: false,
+      report_flag: false,
+      views: 0,
+      comments: null,
+      reactions: null,
+      call_type: null
     },
     {
       id: 2,
@@ -20,6 +28,14 @@ const mockMessages: Record<number, Message[]> = {
       type: "text",
       is_edited: false,
       created_at: new Date().toISOString(),
+      read: false,
+      received: false,
+      delete_flag: false,
+      report_flag: false,
+      views: 0,
+      comments: null,
+      reactions: null,
+      call_type: null
     },
   ],
   2: [
@@ -31,6 +47,14 @@ const mockMessages: Record<number, Message[]> = {
       type: "text",
       is_edited: false,
       created_at: new Date().toISOString(),
+      read: false,
+      received: false,
+      delete_flag: false,
+      report_flag: false,
+      views: 0,
+      comments: null,
+      reactions: null,
+      call_type: null
     },
   ],
 };
@@ -42,16 +66,23 @@ export const useMessages = (chatId: number) => {
     setMessages(mockMessages[chatId] || []);
   }, [chatId]);
 
-  const sendMessage = async (content: string, type: Message["type"] = "text", mediaUrl?: string) => {
+  const sendMessage = async (content: string, type: Message["type"] = "text") => {
     const newMessage: Message = {
       id: Date.now(),
       content,
       chat_id: chatId,
       sender_id: 1,
       type,
-      media_url: mediaUrl,
       is_edited: false,
       created_at: new Date().toISOString(),
+      read: false,
+      received: false,
+      delete_flag: false,
+      report_flag: false,
+      views: 0,
+      comments: null,
+      reactions: null,
+      call_type: null
     };
 
     setMessages((prev) => [...prev, newMessage]);

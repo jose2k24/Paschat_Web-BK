@@ -31,7 +31,6 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
           key={msg.id}
           messageId={String(msg.id)}
           messageType={msg.type}
-          mediaUrl={msg.media_url}
           canDelete={msg.sender_id === currentUser}
         >
           <div className={cn(
@@ -53,15 +52,15 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
               )}
               {msg.type === "image" && (
                 <img
-                  src={msg.media_url}
-                  alt={msg.content}
+                  src={msg.content}
+                  alt="Image message"
                   className="w-full rounded-md"
                   loading="lazy"
                 />
               )}
               {msg.type === "video" && (
                 <video
-                  src={msg.media_url}
+                  src={msg.content}
                   controls
                   className="w-full rounded-md"
                 />
@@ -69,12 +68,12 @@ export const MessageList = ({ messages, currentUser, isTyping }: MessageListProp
               {msg.type === "audio" && (
                 <div className="flex items-center gap-2">
                   <Volume2 className="h-4 w-4" />
-                  <audio src={msg.media_url} controls className="max-w-[200px]" />
+                  <audio src={msg.content} controls className="max-w-[200px]" />
                 </div>
               )}
               {msg.type === "document" && (
                 <a
-                  href={msg.media_url}
+                  href={msg.content}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-blue-200 hover:text-blue-100 transition-colors"
