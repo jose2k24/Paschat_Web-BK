@@ -15,7 +15,7 @@ interface ChatDB extends DBSchema {
     value: ChatRoom;
     indexes: {
       'by-type': string;
-      'by-participant': string;
+      'by-participant': string[];
     };
   };
   messages: {
@@ -45,7 +45,8 @@ class DatabaseService {
         // Chat rooms store
         const roomStore = db.createObjectStore('chatRooms', { keyPath: 'roomId' });
         roomStore.createIndex('by-type', 'roomType');
-        roomStore.createIndex('by-participant', 'participants.*.phone');
+        // Changed this line to use a simple array of participant phones
+        roomStore.createIndex('by-participant', 'participantPhones', { multiEntry: true });
 
         // Messages store
         const messageStore = db.createObjectStore('messages', { keyPath: 'id' });
@@ -102,7 +103,12 @@ class DatabaseService {
   // Chat room operations
   async saveChatRoom(room: ChatRoom) {
     if (!this.db) await this.init();
-    await this.db!.put('chatRooms', room);
+    // Add participantPhones array for indexing
+    const roomWithPhones = {
+      ...room,
+      participantPhones: room.participants.map(p => p.phone)
+    };
+    await this.db!.put('chatRooms', roomWithPhones);
   }
 
   async getChatRoom(roomId: number): Promise<ChatRoom | undefined> {
