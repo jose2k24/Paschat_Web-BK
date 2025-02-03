@@ -47,6 +47,18 @@ const App: React.FC = () => {
                 element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
               />
               <Route 
+                path="/chat/:chatId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/group/:groupId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
+                path="/channel/:channelId" 
+                element={isAuthenticated ? <Index /> : <Navigate to="/login" replace />} 
+              />
+              <Route 
                 path="/contacts" 
                 element={isAuthenticated ? <Contacts /> : <Navigate to="/login" replace />} 
               />
