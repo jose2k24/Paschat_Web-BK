@@ -121,7 +121,7 @@ const PhoneLogin = ({ onQRLogin }: PhoneLoginProps) => {
         wsService.connect();
         
         toast.success("Verification code sent");
-        navigate("/verify");
+        navigate("/chat");
       }
     } catch (error) {
       console.error("Login error:", error);
