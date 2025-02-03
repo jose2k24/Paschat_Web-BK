@@ -41,6 +41,7 @@ export const useChat = (roomId: number) => {
             date: format(new Date(), 'yyyy-MM-dd'),
           };
 
+          console.log("Sending getMessages request:", request);
           await wsService.send({
             action: "getMessages",
             data: request

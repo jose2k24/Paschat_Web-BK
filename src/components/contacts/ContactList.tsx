@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Contact } from "@/types/chat";
 
 interface ContactListProps {
-  onSelectContact?: (contactId: number) => void;
+  onSelectContact?: (chatId: string) => void;  // Changed to accept string
 }
 
 export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => {
@@ -79,13 +79,12 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
         const response = await apiService.createChatRoom(userPhone, contact.phone);
         
         if (response.data) {
-          const { roomId: newRoomId, createdAt, participants } = response.data;
-          roomId = parseInt(newRoomId.toString(), 10);
+          roomId = parseInt(response.data.roomId.toString(), 10);
           
           await dbService.saveChatRoom({
             roomId,
-            participants,
-            createdAt,
+            participants: response.data.participants,
+            createdAt: response.data.createdAt,
             roomType: "private"
           });
 
@@ -93,7 +92,8 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
         }
       }
 
-      onSelectContact?.(parseInt(contact.phone, 10));
+      // Pass roomId as string to maintain consistency with group/channel IDs
+      onSelectContact?.(roomId.toString());
       navigate(`/chat/${roomId}`);
     } catch (error) {
       console.error("Error handling contact selection:", error);
