@@ -45,7 +45,6 @@ class DatabaseService {
         // Chat rooms store
         const roomStore = db.createObjectStore('chatRooms', { keyPath: 'roomId' });
         roomStore.createIndex('by-type', 'roomType');
-        // Changed this line to use a simple array of participant phones
         roomStore.createIndex('by-participant', 'participantPhones', { multiEntry: true });
 
         // Messages store
@@ -103,7 +102,6 @@ class DatabaseService {
   // Chat room operations
   async saveChatRoom(room: ChatRoom) {
     if (!this.db) await this.init();
-    // Add participantPhones array for indexing
     const roomWithPhones = {
       ...room,
       participantPhones: room.participants.map(p => p.phone)
@@ -114,6 +112,11 @@ class DatabaseService {
   async getChatRoom(roomId: number): Promise<ChatRoom | undefined> {
     if (!this.db) await this.init();
     return this.db!.get('chatRooms', roomId);
+  }
+
+  async getAllChatRooms(): Promise<ChatRoom[]> {
+    if (!this.db) await this.init();
+    return this.db!.getAll('chatRooms');
   }
 
   async getChatRoomsByType(type: ChatRoom['roomType']): Promise<ChatRoom[]> {
