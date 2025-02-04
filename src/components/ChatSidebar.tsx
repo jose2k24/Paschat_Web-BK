@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChatTabs } from "./chat/ChatTabs";
 import { ChatSearch } from "./chat/ChatSearch";
@@ -7,6 +7,8 @@ import { StoriesSection } from "./chat/StoriesSection";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { dbService } from "@/services/db";
+import { Contact } from "@/types/chat";
 
 interface Chat {
   id: string;
@@ -29,43 +31,6 @@ interface Channel extends Chat {
   isOwner: boolean;
   description?: string;
 }
-
-const mockChats: Chat[] = [
-  {
-    id: "1",
-    name: "Pizza",
-    lastMessage: "Yes, they are necessary",
-    time: "11:38 AM",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: "2",
-    name: "Elon",
-    lastMessage: "I love /r/Reddit!",
-    time: "12:44 AM",
-  },
-  {
-    id: "3",
-    name: "Pasha",
-    lastMessage: "How are u?",
-    time: "Fri",
-    online: true,
-  },
-  {
-    id: "4",
-    name: "void",
-    lastMessage: "Hamsters day!!!",
-    time: "11:38",
-  },
-  {
-    id: "5",
-    name: "PasChat Support",
-    lastMessage: "Yes it happened.",
-    time: "Thu",
-    unread: 1,
-  },
-];
 
 const mockGroups: Group[] = [
   {
@@ -116,7 +81,45 @@ export const ChatSidebar = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "group" | "channel">("all");
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Chat[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadContacts = async () => {
+      try {
+        const savedContacts = await dbService.getContacts();
+        const chatRooms = await dbService.getAllChatRooms();
+        
+        const contactsWithMessages = await Promise.all(
+          savedContacts.map(async (contact) => {
+            const room = chatRooms.find(room => room.roomId === contact.roomId);
+            const messages = room ? await dbService.getMessagesByRoom(room.roomId) : [];
+            const lastMessage = messages[messages.length - 1];
+            
+            return {
+              id: contact.roomId?.toString() || contact.phone,
+              name: contact.phone,
+              lastMessage: lastMessage?.content || "No messages yet",
+              time: lastMessage ? new Date(lastMessage.createdAt).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) : "",
+              avatar: contact.profile || undefined,
+              online: false, // You can implement online status logic here
+              unread: messages.filter(msg => !msg.read).length
+            };
+          })
+        );
+
+        setContacts(contactsWithMessages);
+      } catch (error) {
+        console.error("Failed to load contacts:", error);
+        toast.error("Failed to load contacts");
+      }
+    };
+
+    loadContacts();
+  }, []);
 
   const handleChatSelect = (chatId: string) => {
     setSelectedChat(chatId);
@@ -130,7 +133,7 @@ export const ChatSidebar = () => {
   };
 
   const handleNewChat = () => {
-    toast.info("New chat feature coming soon!");
+    navigate('/contacts');
   };
 
   const getFilteredItems = () => {
@@ -145,7 +148,7 @@ export const ChatSidebar = () => {
           channel.name.toLowerCase().includes(searchLower)
         );
       default:
-        return mockChats.filter(chat => 
+        return contacts.filter(chat => 
           chat.name.toLowerCase().includes(searchLower)
         );
     }
