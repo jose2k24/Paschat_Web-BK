@@ -20,6 +20,7 @@ export const ChatArea = () => {
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
   
   const {
     messages,
@@ -45,22 +46,45 @@ export const ChatArea = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (message && !isTyping) {
-      setIsTyping(true);
-      setTypingStatus(true);
-      const timeout = setTimeout(() => {
+    if (message) {
+      // Clear any existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Set typing status to true
+      if (!isTyping) {
+        setIsTyping(true);
+        setTypingStatus(true);
+      }
+
+      // Set a new timeout to clear typing status
+      typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
         setTypingStatus(false);
-      }, 3000);
-      return () => clearTimeout(timeout);
+      }, 2000); // Reduced timeout to 2 seconds for better UX
+    } else {
+      // If message is empty, clear typing status immediately
+      setIsTyping(false);
+      setTypingStatus(false);
     }
-  }, [message, isTyping, setTypingStatus]);
+
+    // Cleanup timeout on unmount or when message changes
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [message, setTypingStatus]);
 
   const handleSend = async () => {
     if (!message.trim()) return;
     try {
       await sendMessage(message);
       setMessage("");
+      // Clear typing status immediately after sending
+      setIsTyping(false);
+      setTypingStatus(false);
     } catch (error) {
       toast.error("Failed to send message");
     }
