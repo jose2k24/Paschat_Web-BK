@@ -89,7 +89,6 @@ export const ChatArea = () => {
       if (!response.ok) throw new Error("Upload failed");
 
       const data = await response.json();
-      // Since we no longer support mediaUrl, we'll just send the file name
       await sendMessage(file.name, file.type.split("/")[0] as "image" | "video" | "document" | "audio");
       toast.success("File uploaded successfully");
     } catch (error) {
@@ -146,7 +145,7 @@ export const ChatArea = () => {
           userName={chatId || groupId || channelId || "0"}
         />
       </div>
-      {groupId && (
+      {groupId !== "0" && (
         <GroupProfileSidebar 
           group={{ 
             id: groupId,
@@ -156,7 +155,7 @@ export const ChatArea = () => {
           }} 
         />
       )}
-      {channelId && (
+      {channelId !== "0" && (
         <ChannelProfileSidebar 
           channel={{ 
             id: channelId,
