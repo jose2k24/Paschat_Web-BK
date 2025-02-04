@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Contact } from "@/types/chat";
 
 interface ContactListProps {
-  onSelectContact?: (chatId: string) => void;  // Changed to accept string
+  onSelectContact?: (chatId: string) => void;
 }
 
 export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => {
@@ -92,7 +92,6 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
         }
       }
 
-      // Pass roomId as string to maintain consistency with group/channel IDs
       onSelectContact?.(roomId.toString());
       navigate(`/chat/${roomId}`);
     } catch (error) {
@@ -106,7 +105,7 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
   );
 
   return (
-    <div className="w-80 border-r border-gray-800 flex flex-col">
+    <div className="flex-1 flex flex-col">
       <div className="p-4 border-b border-gray-800">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
