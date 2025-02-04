@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "@/services/api";
 import { dbService } from "@/services/db";
 import { toast } from "sonner";
 import { Contact } from "@/types/chat";
+import { SearchBar } from "./SearchBar";
+import { ContactItem } from "./ContactItem";
 
 interface ContactListProps {
   onSelectContact?: (chatId: string) => void;
@@ -106,42 +106,17 @@ export const ContactList: React.FC<ContactListProps> = ({ onSelectContact }) => 
 
   return (
     <div className="flex-1 flex flex-col">
-      <div className="p-4 border-b border-gray-800">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search contacts"
-            className="pl-9 bg-gray-800 border-none text-white placeholder:text-gray-400"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
+      <SearchBar 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       <div className="flex-1 overflow-y-auto">
         {filteredContacts.map((contact) => (
-          <button
+          <ContactItem
             key={contact.phone}
+            contact={contact}
             onClick={() => handleContactSelect(contact)}
-            className="w-full p-4 flex items-center gap-3 hover:bg-gray-800 transition-colors text-left"
-          >
-            <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-medium text-white">
-              {contact.profile ? (
-                <img
-                  src={contact.profile}
-                  alt={contact.phone}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                contact.phone[0]
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-white font-medium truncate">
-                {contact.phone}
-              </h3>
-              <p className="text-sm text-gray-400 truncate">{contact.phone}</p>
-            </div>
-          </button>
+          />
         ))}
       </div>
     </div>
