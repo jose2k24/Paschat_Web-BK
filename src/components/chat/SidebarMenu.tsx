@@ -50,7 +50,9 @@ export const SidebarMenu = () => {
       
       // Show success message and redirect
       toast.success("Logged out successfully");
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000); // Delay for 2 seconds before navigating
       
     } catch (error) {
       console.error("Logout failed:", error);
