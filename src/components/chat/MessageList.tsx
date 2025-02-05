@@ -51,88 +51,92 @@ export const MessageList = ({ messages, currentUser, isTyping, onScrollTop }: Me
       className="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-telegram-darker to-telegram-dark"
       onScroll={handleScroll}
     >
-      {messages.map((msg, index) => (
-        <div key={msg.id}>
-          {isNewDay(index, msg) && (
-            <div className="flex justify-center my-4">
-              <span className="px-3 py-1 text-sm bg-telegram-message rounded-full text-gray-300">
-                {getDateLabel(new Date(msg.createdAt))}
-              </span>
-            </div>
-          )}
-          <MessageContextMenu
-            messageId={String(msg.id)}
-            messageType={msg.type}
-            canDelete={msg.senderId === currentUser}
-          >
-            <div className={cn(
-              "flex items-end gap-2",
-              msg.senderId === currentUser ? "justify-end" : "justify-start"
-            )}>
-              {msg.senderId !== currentUser && isFirstInStack(index, msg) && (
-                <Avatar className="w-8 h-8" />
-              )}
-              <div
-                className={cn(
-                  "message group max-w-[70%]",
-                  msg.senderId === currentUser ? "message-sent bg-telegram-blue" : "message-received bg-telegram-message",
-                  !isLastInStack(index, msg) && "mb-1"
+      {messages.map((msg, index) => {
+        const isSentByCurrentUser = msg.senderId === currentUser;
+        
+        return (
+          <div key={msg.id}>
+            {isNewDay(index, msg) && (
+              <div className="flex justify-center my-4">
+                <span className="px-3 py-1 text-sm bg-telegram-dark/50 rounded-full text-gray-300">
+                  {getDateLabel(new Date(msg.createdAt))}
+                </span>
+              </div>
+            )}
+            <MessageContextMenu
+              messageId={String(msg.id)}
+              messageType={msg.type}
+              canDelete={isSentByCurrentUser}
+            >
+              <div className={cn(
+                "flex items-end gap-2",
+                isSentByCurrentUser ? "justify-end" : "justify-start"
+              )}>
+                {!isSentByCurrentUser && isFirstInStack(index, msg) && (
+                  <Avatar className="w-8 h-8" />
                 )}
-              >
-                {msg.type === "text" && (
-                  <p className="text-[15px] leading-relaxed">{msg.content}</p>
-                )}
-                {msg.type === "image" && (
-                  <img
-                    src={msg.content}
-                    alt="Image message"
-                    className="w-full rounded-md"
-                    loading="lazy"
-                  />
-                )}
-                {msg.type === "video" && (
-                  <video
-                    src={msg.content}
-                    controls
-                    className="w-full rounded-md"
-                  />
-                )}
-                {msg.type === "audio" && (
-                  <div className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4" />
-                    <audio src={msg.content} controls className="max-w-[200px]" />
-                  </div>
-                )}
-                {msg.type === "document" && (
-                  <a
-                    href={msg.content}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-200 hover:text-blue-100 transition-colors"
-                  >
-                    <FileIcon className="h-4 w-4" />
-                    <span className="truncate">{msg.content}</span>
-                  </a>
-                )}
-                <div className="flex items-center gap-1.5 justify-end mt-1 text-xs text-gray-300">
-                  <span className="message-timestamp">
-                    {format(new Date(msg.createdAt), "HH:mm")}
-                  </span>
-                  {msg.senderId === currentUser && (
-                    <span className="message-status">
-                      {msg.read ? (
-                        <CheckCheck className="h-3 w-3" />
-                      ) : (
-                        <Check className="h-3 w-3" />
-                      )}
-                    </span>
+                <div
+                  className={cn(
+                    "message",
+                    isSentByCurrentUser ? "message-sent" : "message-received",
+                    !isLastInStack(index, msg) && "mb-1"
                   )}
+                >
+                  {msg.type === "text" && (
+                    <p className="text-[15px] leading-relaxed">{msg.content}</p>
+                  )}
+                  {msg.type === "image" && (
+                    <img
+                      src={msg.content}
+                      alt="Image message"
+                      className="w-full rounded-md"
+                      loading="lazy"
+                    />
+                  )}
+                  {msg.type === "video" && (
+                    <video
+                      src={msg.content}
+                      controls
+                      className="w-full rounded-md"
+                    />
+                  )}
+                  {msg.type === "audio" && (
+                    <div className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4" />
+                      <audio src={msg.content} controls className="max-w-[200px]" />
+                    </div>
+                  )}
+                  {msg.type === "document" && (
+                    <a
+                      href={msg.content}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-blue-200 hover:text-blue-100 transition-colors"
+                    >
+                      <FileIcon className="h-4 w-4" />
+                      <span className="truncate">{msg.content}</span>
+                    </a>
+                  )}
+                  <div className="flex items-center gap-1.5 justify-end mt-1 text-xs text-gray-300">
+                    <span className="message-timestamp">
+                      {format(new Date(msg.createdAt), "HH:mm")}
+                    </span>
+                    {isSentByCurrentUser && (
+                      <span className="message-status">
+                        {msg.read ? (
+                          <CheckCheck className="h-3 w-3" />
+                        ) : (
+                          <Check className="h-3 w-3" />
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </MessageContextMenu>
-        </div>
-      ))}
+            </MessageContextMenu>
+          </div>
+        );
+      })}
       {isTyping && (
         <div className="typing-indicator ml-2">
           <div className="typing-dot animate-typing" style={{ animationDelay: "0ms" }} />
