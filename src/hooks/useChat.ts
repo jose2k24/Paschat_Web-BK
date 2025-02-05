@@ -39,7 +39,6 @@ export const useChat = (roomId: number) => {
             chatRoomId: roomId,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             date: format(new Date(), 'yyyy-MM-dd'),
-            communityId: 0 // Adding default communityId for private chats
           };
 
           console.log("Sending getMessages request:", request);
@@ -116,8 +115,7 @@ export const useChat = (roomId: number) => {
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
-          recipientId: recipient.id,
-          communityId: 0 // Adding default communityId for private messages
+          recipientId: recipient.id
         },
       });
     } catch (error) {
