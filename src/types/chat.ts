@@ -60,6 +60,20 @@ export interface MediaContent {
   fileSize: string;
 }
 
+// Call state interface
+export interface CallState {
+  isActive: boolean;
+  type: "audio" | "video" | null;
+  participantId: number | null;
+  stream: MediaStream | null;
+}
+
+// Message group interface
+export interface MessageGroup {
+  date: string;
+  messages: Message[];
+}
+
 // Helper function to transform message formats
 export function transformChatMessage(msg: any): Message {
   return {
