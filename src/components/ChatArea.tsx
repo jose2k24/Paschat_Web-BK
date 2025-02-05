@@ -28,7 +28,9 @@ export const ChatArea = () => {
     error,
     sendMessage,
     setTypingStatus,
-    isConnected
+    isConnected,
+    loadMoreMessages,
+    isLoadingMore
   } = useChat(parseInt(chatId || groupId || channelId || "0", 10));
 
   useEffect(() => {
@@ -47,29 +49,24 @@ export const ChatArea = () => {
 
   useEffect(() => {
     if (message) {
-      // Clear any existing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      // Set typing status to true
       if (!isTyping) {
         setIsTyping(true);
         setTypingStatus(true);
       }
 
-      // Set a new timeout to clear typing status
       typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
         setTypingStatus(false);
-      }, 2000); // Reduced timeout to 2 seconds for better UX
+      }, 2000);
     } else {
-      // If message is empty, clear typing status immediately
       setIsTyping(false);
       setTypingStatus(false);
     }
 
-    // Cleanup timeout on unmount or when message changes
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -82,7 +79,6 @@ export const ChatArea = () => {
     try {
       await sendMessage(message);
       setMessage("");
-      // Clear typing status immediately after sending
       setIsTyping(false);
       setTypingStatus(false);
     } catch (error) {
@@ -148,6 +144,7 @@ export const ChatArea = () => {
           messages={messages}
           currentUser={parseInt(localStorage.getItem("userPhone") || "0", 10)}
           isTyping={isTyping}
+          onScrollTop={loadMoreMessages}
         />
         <div ref={messagesEndRef} />
         <MessageInput

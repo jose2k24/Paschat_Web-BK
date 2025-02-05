@@ -21,14 +21,6 @@ export interface GetMessagesRequest {
   date: string;
 }
 
-export interface SendMessageRequest {
-  content: string;
-  dataType: "text" | "image" | "video" | "document" | "audio";
-  createdAt: string;
-  roomId: number;
-  recipientId: number;
-}
-
 // Chat room interfaces
 export interface ChatRoomParticipant {
   id: number;
@@ -55,6 +47,11 @@ export interface CallState {
   type: "audio" | "video" | null;
   participantId: number | null;
   stream: MediaStream | null;
+}
+
+export interface MessageGroup {
+  date: string;
+  messages: Message[];
 }
 
 // Helper function to transform message formats
