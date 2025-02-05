@@ -192,17 +192,33 @@ class ApiService {
   }
 
   // File upload endpoint
-  async uploadMedia(file: File) {
+  async uploadFile(file: File): Promise<{ mediaUrl: string; fileSize: string }> {
     const formData = new FormData();
     formData.append("file", file);
 
-    return this.request("/file/upload/media", {
+    const response = await this.request<{ url: string }>("/file/upload/media", {
       method: "POST",
       headers: {
         // Don't set Content-Type here, let the browser set it with the boundary
+        Authorization: this.authToken || "",
       },
       body: formData,
     });
+
+    if (!response.data) {
+      throw new Error("Failed to upload file");
+    }
+
+    // Calculate file size in MB or KB
+    const size = file.size;
+    const fileSize = size > 1024 * 1024 
+      ? `${(size / (1024 * 1024)).toFixed(1)}mb`
+      : `${(size / 1024).toFixed(1)}kb`;
+
+    return {
+      mediaUrl: response.data.url,
+      fileSize,
+    };
   }
 
   // Community endpoints

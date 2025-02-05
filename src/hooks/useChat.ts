@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { format, subDays, startOfDay } from "date-fns";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
+import { apiService } from "@/services/api";
 import { 
   Message, 
   GetMessagesRequest, 
   SendMessageRequest,
   transformChatMessage, 
   getMessageType,
-  formatFileSize,
   MediaContent 
 } from "@/types/chat";
 import { toast } from "sonner";
@@ -169,25 +169,11 @@ export const useChat = (roomId: number) => {
 
       // Handle file uploads for non-text messages
       if (type !== "text") {
-        const formData = new FormData();
         const file = new File([content], "file", { type: content });
-        formData.append("file", file);
-
-        const response = await fetch("https://vps.paschat.net/api/v1/file/upload/media", {
-          method: "POST",
-          headers: {
-            "Authorization": localStorage.getItem("authToken") || "",
-          },
-          body: formData,
-        });
-
-        if (!response.ok) throw new Error("File upload failed");
-
-        const uploadData = await response.json();
-        const fileSize = formatFileSize(file.size);
-
+        const { mediaUrl, fileSize } = await apiService.uploadFile(file);
+        
         const mediaContent: MediaContent = {
-          mediaUrl: uploadData.url,
+          mediaUrl,
           fileSize
         };
 
