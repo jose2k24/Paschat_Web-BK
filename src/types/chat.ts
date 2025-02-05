@@ -14,6 +14,19 @@ export interface Message {
   callType: "audio" | "video" | null;
 }
 
+// WebSocket message request interface
+export interface SendMessageRequest {
+  action: "sendMessage";
+  data: {
+    content: string;
+    dataType: "text" | "image" | "video" | "document" | "audio";
+    createdAt: string;
+    roomId: number;
+    senderId: number;
+    recipientId: number;
+  };
+}
+
 // Request interfaces
 export interface GetMessagesRequest {
   chatRoomId: number;
@@ -41,17 +54,10 @@ export interface Contact {
   roomId: number | null;
 }
 
-// Call state interface
-export interface CallState {
-  isActive: boolean;
-  type: "audio" | "video" | null;
-  participantId: number | null;
-  stream: MediaStream | null;
-}
-
-export interface MessageGroup {
-  date: string;
-  messages: Message[];
+// Media content interface
+export interface MediaContent {
+  mediaUrl: string;
+  fileSize: string;
 }
 
 // Helper function to transform message formats
@@ -70,4 +76,25 @@ export function transformChatMessage(msg: any): Message {
     deleteFlag: msg.deleteFlag,
     callType: msg.callType
   };
+}
+
+// Helper function to determine file type
+export function getMessageType(mimeType: string): Message["type"] {
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (
+    mimeType.startsWith("application/") ||
+    mimeType.startsWith("text/")
+  ) return "document";
+  return "text";
+}
+
+// Helper function to format file size
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))}${sizes[i]}`;
 }

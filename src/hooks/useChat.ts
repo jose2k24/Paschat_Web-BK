@@ -2,7 +2,15 @@ import { useState, useEffect, useCallback } from "react";
 import { format, subDays, startOfDay } from "date-fns";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, GetMessagesRequest, transformChatMessage } from "@/types/chat";
+import { 
+  Message, 
+  GetMessagesRequest, 
+  SendMessageRequest,
+  transformChatMessage, 
+  getMessageType,
+  formatFileSize,
+  MediaContent 
+} from "@/types/chat";
 import { toast } from "sonner";
 
 export const useChat = (roomId: number) => {
@@ -151,36 +159,63 @@ export const useChat = (roomId: number) => {
       const userPhone = localStorage.getItem("userPhone");
       if (!userPhone) throw new Error("User not logged in");
 
+      const currentUser = chatRoom.participants.find(p => p.phone === userPhone);
       const recipient = chatRoom.participants.find(p => p.phone !== userPhone);
-      if (!recipient) throw new Error("Recipient not found");
 
-      // Prepare the message payload according to the type
+      if (!currentUser || !recipient) throw new Error("Participants not found");
+
       let messageContent = content;
+      let dataType = type;
+
+      // Handle file uploads for non-text messages
       if (type !== "text") {
-        messageContent = JSON.stringify({
-          mediaUrl: content,
-          fileSize: "1mb" // This should be calculated based on the actual file size
+        const formData = new FormData();
+        const file = new File([content], "file", { type: content });
+        formData.append("file", file);
+
+        const response = await fetch("https://vps.paschat.net/api/v1/file/upload/media", {
+          method: "POST",
+          headers: {
+            "Authorization": localStorage.getItem("authToken") || "",
+          },
+          body: formData,
         });
+
+        if (!response.ok) throw new Error("File upload failed");
+
+        const uploadData = await response.json();
+        const fileSize = formatFileSize(file.size);
+
+        const mediaContent: MediaContent = {
+          mediaUrl: uploadData.url,
+          fileSize
+        };
+
+        messageContent = JSON.stringify(mediaContent);
       }
 
-      // Send the properly formatted WebSocket request
-      await wsService.send({
+      // Construct the WebSocket request payload
+      const messageRequest: SendMessageRequest = {
         action: "sendMessage",
         data: {
           content: messageContent,
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
+          senderId: currentUser.id,
           recipientId: recipient.id
         }
-      });
+      };
 
-      // Save message to local database
+      // Send the message via WebSocket
+      await wsService.send(messageRequest);
+
+      // Save to local database
       const newMessage: Message = {
-        id: Date.now(), // Temporary ID until server responds
+        id: Date.now(),
         type,
         content: messageContent,
-        senderId: parseInt(userPhone),
+        senderId: currentUser.id,
         recipientId: recipient.id,
         roomId,
         replyTo: null,
