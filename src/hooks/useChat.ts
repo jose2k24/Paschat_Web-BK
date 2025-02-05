@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { format, subDays, startOfDay, addDays } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
 import { Message, GetMessagesRequest, transformChatMessage } from "@/types/chat";
@@ -154,16 +154,46 @@ export const useChat = (roomId: number) => {
       const recipient = chatRoom.participants.find(p => p.phone !== userPhone);
       if (!recipient) throw new Error("Recipient not found");
 
+      // Prepare the message payload according to the type
+      let messageContent = content;
+      if (type !== "text") {
+        messageContent = JSON.stringify({
+          mediaUrl: content,
+          fileSize: "1mb" // This should be calculated based on the actual file size
+        });
+      }
+
+      // Send the properly formatted WebSocket request
       await wsService.send({
         action: "sendMessage",
         data: {
-          content,
+          content: messageContent,
           dataType: type,
           createdAt: new Date().toISOString(),
           roomId,
           recipientId: recipient.id
-        },
+        }
       });
+
+      // Save message to local database
+      const newMessage: Message = {
+        id: Date.now(), // Temporary ID until server responds
+        type,
+        content: messageContent,
+        senderId: parseInt(userPhone),
+        recipientId: recipient.id,
+        roomId,
+        replyTo: null,
+        createdAt: new Date().toISOString(),
+        read: false,
+        received: false,
+        deleteFlag: false,
+        callType: null
+      };
+
+      await dbService.saveMessage(newMessage);
+      setMessages(prev => [...prev, newMessage]);
+
     } catch (error) {
       console.error("Failed to send message:", error);
       toast.error("Failed to send message");
