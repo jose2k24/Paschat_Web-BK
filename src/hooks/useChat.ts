@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { format, subDays, startOfDay, isToday, isYesterday } from "date-fns";
+import { format, subDays, startOfDay, addDays } from "date-fns";
 import { wsService } from "@/services/websocket";
 import { dbService } from "@/services/db";
-import { Message, GetMessagesRequest, transformChatMessage, MessageGroup } from "@/types/chat";
+import { Message, GetMessagesRequest, transformChatMessage } from "@/types/chat";
 import { toast } from "sonner";
 
 export const useChat = (roomId: number) => {
@@ -26,6 +26,21 @@ export const useChat = (roomId: number) => {
       data: request
     });
   }, [roomId]);
+
+  const fetchLastMonthMessages = useCallback(async () => {
+    const today = startOfDay(new Date());
+    const oneMonthAgo = subDays(today, 30);
+    let currentDate = today;
+
+    while (currentDate >= oneMonthAgo) {
+      await fetchMessagesForDate(currentDate);
+      currentDate = subDays(currentDate, 1);
+      // Add a small delay between requests to prevent overwhelming the server
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    setOldestLoadedDate(oneMonthAgo);
+  }, [fetchMessagesForDate]);
 
   const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore) return;
@@ -67,16 +82,12 @@ export const useChat = (roomId: number) => {
             throw new Error("Chat room not found");
           }
 
-          // Fetch last 30 days of messages
-          const today = startOfDay(new Date());
-          setOldestLoadedDate(today);
-          
           // Load initial messages from local DB
           const localMessages = await dbService.getMessagesByRoom(roomId);
           setMessages(localMessages);
 
-          // Fetch today's messages first
-          await fetchMessagesForDate(today);
+          // Fetch last month's messages
+          await fetchLastMonthMessages();
         }
 
         setIsLoading(false);
@@ -125,7 +136,7 @@ export const useChat = (roomId: number) => {
       unsubscribeNew();
       unsubscribeReceived();
     };
-  }, [roomId, fetchMessagesForDate]);
+  }, [roomId, fetchLastMonthMessages]);
 
   const sendMessage = async (content: string, type: Message["type"] = "text") => {
     if (!roomId) {
