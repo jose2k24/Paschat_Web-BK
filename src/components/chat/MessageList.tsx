@@ -53,6 +53,12 @@ export const MessageList = ({ messages, currentUser, isTyping, onScrollTop }: Me
     >
       {messages.map((msg, index) => {
         const isSentByCurrentUser = msg.senderId === currentUser;
+        console.log('Message:', {
+          id: msg.id,
+          senderId: msg.senderId,
+          currentUser,
+          isSentByCurrentUser
+        });
         
         return (
           <div key={msg.id}>
